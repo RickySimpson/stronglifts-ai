@@ -662,6 +662,88 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
   .exercise-controls input{grid-column:1/-1;}
 }
 
+
+
+/* ── Progress refresh + set correction ────────────────────────── */
+.exercise-controls{
+  grid-template-columns:84px 1fr auto auto;
+}
+.undo-btn{
+  background:#fff;
+  color:var(--muted);
+  border:1px solid rgba(22,22,22,.08);
+  border-radius:12px;
+  padding:11px 12px;
+  font-family:var(--font-body);
+  font-size:13px;
+  cursor:pointer;
+  transition:all .15s ease;
+}
+.undo-btn:hover{background:#f6f2ef;color:var(--text);}
+.undo-btn:disabled{opacity:.45;cursor:not-allowed;}
+
+#sec-progress .card{
+  background:linear-gradient(180deg,#fff 0%,#fbf8f5 100%);
+  border:1px solid rgba(22,22,22,.06);
+  border-radius:22px;
+  box-shadow:0 14px 28px rgba(26,18,11,.05);
+}
+#sec-progress .card-title{font-size:20px;letter-spacing:.02em;}
+#sec-progress .metrics{gap:10px;}
+#sec-progress .metric{
+  background:linear-gradient(180deg,#fff 0%,#fcf9f7 100%);
+  border:1px solid rgba(22,22,22,.06);
+  border-radius:18px;
+  box-shadow:0 8px 18px rgba(26,18,11,.03);
+}
+#lift-bars{display:grid;grid-template-columns:1fr;gap:12px;}
+.lift-card{
+  background:#fff;
+  border:1px solid rgba(22,22,22,.06);
+  border-radius:18px;
+  padding:14px;
+  box-shadow:0 8px 18px rgba(26,18,11,.03);
+}
+.lift-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
+.lift-card-title{font-size:15px;font-weight:700;color:var(--text);}
+.lift-card-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.lift-card-value{font-family:var(--font-display);font-size:30px;line-height:1;color:var(--text);}
+.lift-progress-track{height:10px;background:#f2ece7;border-radius:999px;overflow:hidden;margin:12px 0 10px;}
+.lift-progress-fill{height:100%;border-radius:999px;transition:width .35s ease;}
+.lift-card-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);}
+
+.review-hero{
+  background:linear-gradient(180deg,#fff7f7 0%,#fff 100%);
+  border:1px solid rgba(198,40,40,.10);
+  border-radius:18px;
+  padding:14px;
+}
+.review-hero-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px;}
+.review-hero-title{font-size:14px;font-weight:700;color:var(--text);}
+.review-hero-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;}
+.review-badge{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:8px 10px;border-radius:999px;background:#fff;border:1px solid rgba(198,40,40,.10);color:var(--red);font-size:12px;font-weight:700;}
+.review-grid{gap:10px;}
+.review-cell{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px;}
+.review-note{margin-top:12px;color:#5d544e;line-height:1.6;}
+
+.milestone-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
+.milestone{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px;box-shadow:0 8px 18px rgba(26,18,11,.03);}
+.milestone-note{margin-top:6px;color:#5d544e;line-height:1.6;}
+
+.chip-row{gap:10px;margin-bottom:14px;}
+.chip-btn{box-shadow:0 4px 10px rgba(26,18,11,.03);}
+.chart-box{background:linear-gradient(180deg,#fff 0%,#fcf9f7 100%);border:1px solid rgba(22,22,22,.06);border-radius:18px;padding:14px;}
+.history-detail-row,.history-row{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px 14px;margin-bottom:10px;box-shadow:0 8px 18px rgba(26,18,11,.03);border-bottom:none;}
+.history-detail-row:last-child,.history-row:last-child{margin-bottom:0;}
+.history-detail-main{font-size:14px;font-weight:600;color:var(--text);}
+.history-detail-sub,.history-date{color:var(--muted);}
+
+@media (max-width:420px){
+  .exercise-controls{grid-template-columns:72px 1fr 1fr;}
+  .undo-btn{grid-column:1 / -1;}
+  .lift-card-value{font-size:26px;}
+}
+
 </style>
 </head>
 <body>
@@ -1315,7 +1397,7 @@ function renderPlannedSets() {
       const logged = getLoggedSetById(id);
       const cls = logged ? (logged.completed ? 'done' : 'failed') : (idx === loggedForLift ? 'active' : 'pending');
       const label = logged ? (logged.completed ? '✓' : '×') : String(idx + 1);
-      return `<div class="set-pill ${cls}">${label}</div>`;
+      return `<div class="set-pill ${cls}" title="Set ${idx + 1}">${label}</div>`;
     }).join('');
     const nextSet = loggedForLift + 1;
     const complete = nextSet > ex.setsTarget;
@@ -1338,6 +1420,7 @@ function renderPlannedSets() {
           <input type="number" id="reps-${ex.key}" min="0" max="20" step="1" value="${ex.repsTarget}" ${complete ? 'disabled' : ''}>
           <button class="set-complete" onclick="logExerciseSet('${ex.key}')" ${complete ? 'disabled' : ''}>Log set</button>
           <button class="set-fail" onclick="logExerciseSet('${ex.key}', true)" ${complete ? 'disabled' : ''}>Missed</button>
+          <button class="undo-btn" onclick="undoExerciseSet('${ex.key}')" ${loggedForLift ? '' : 'disabled'}>Undo</button>
         </div>
       </div>`;
   }).join('');
@@ -1362,6 +1445,19 @@ function logExerciseSet(key, failed = false) {
   }
   const id = `${key}-${loggedCount + 1}`;
   logPlannedSet(id, failed, `reps-${key}`);
+}
+
+function undoExerciseSet(key) {
+  const indexes = state.currentSets.map((set, idx) => set.key === key ? idx : -1).filter(idx => idx >= 0);
+  if (!indexes.length) {
+    showToast('No logged sets to undo');
+    return;
+  }
+  const removeIdx = indexes[indexes.length - 1];
+  const removed = state.currentSets.splice(removeIdx, 1)[0];
+  renderPlannedSets();
+  renderSessionLog();
+  showToast(`Removed ${removed.ex} set ${removed.id.split('-')[1]}`);
 }
 
 function logPlannedSet(id, failed = false, inputId = null) {
@@ -1656,30 +1752,46 @@ function renderProgress() {
   document.getElementById('p-dead').textContent = formatWeightValue(bestByLift.dead);
 
   const lifts = [
-    { key: 'squat', name: 'Squat', val: current.squat, best: bestByLift.squat, max: Math.max(state.weights.squat + (getUnit()==='lbs' ? 100 : 100), bestByLift.squat * 1.15), color: '#7c6ef5' },
-    { key: 'dead', name: 'Deadlift', val: current.dead, best: bestByLift.dead, max: Math.max(state.weights.dead + (getUnit()==='lbs' ? 125 : 125), bestByLift.dead * 1.15), color: '#3ecf8e' },
-    { key: 'bench', name: 'Bench press', val: current.bench, best: bestByLift.bench, max: Math.max(state.weights.bench + (getUnit()==='lbs' ? 75 : 75), bestByLift.bench * 1.15), color: '#378ADD' },
-    { key: 'row', name: 'Barbell row', val: current.row, best: bestByLift.row, max: Math.max(state.weights.row + (getUnit()==='lbs' ? 60 : 60), bestByLift.row * 1.15), color: '#f5a623' },
-    { key: 'ohp', name: 'Overhead press', val: current.ohp, best: bestByLift.ohp, max: Math.max(state.weights.ohp + (getUnit()==='lbs' ? 50 : 50), bestByLift.ohp * 1.15), color: '#f06060' },
+    { key: 'squat', name: 'Squat', val: current.squat, best: bestByLift.squat, max: Math.max(state.weights.squat + (getUnit()==='lbs' ? 100 : 100), bestByLift.squat * 1.15), color: '#d93434' },
+    { key: 'dead', name: 'Deadlift', val: current.dead, best: bestByLift.dead, max: Math.max(state.weights.dead + (getUnit()==='lbs' ? 125 : 125), bestByLift.dead * 1.15), color: '#2f9e44' },
+    { key: 'bench', name: 'Bench press', val: current.bench, best: bestByLift.bench, max: Math.max(state.weights.bench + (getUnit()==='lbs' ? 75 : 75), bestByLift.bench * 1.15), color: '#d07a1f' },
+    { key: 'row', name: 'Barbell row', val: current.row, best: bestByLift.row, max: Math.max(state.weights.row + (getUnit()==='lbs' ? 60 : 60), bestByLift.row * 1.15), color: '#7e5bef' },
+    { key: 'ohp', name: 'Overhead press', val: current.ohp, best: bestByLift.ohp, max: Math.max(state.weights.ohp + (getUnit()==='lbs' ? 50 : 50), bestByLift.ohp * 1.15), color: '#9a3412' },
   ];
   document.getElementById('lift-bars').innerHTML = lifts.map(l => {
     const pct = Math.min(100, Math.round((l.val / l.max) * 100));
     const prog = state.progress[l.key] || defaultState.progress[l.key];
-    return `<div class="bar-wrap">
-      <div class="bar-label"><span>${l.name}</span><span>${formatWeight(l.val)} · best ${formatWeight(l.best)}</span></div>
-      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${l.color};"></div></div>
-      <div class="metric-sub" style="margin-top:6px;">${prog.lastOutcome === 'deload' ? 'Recent deload' : prog.lastOutcome === 'repeat' ? `Stall watch · misses ${prog.failCount}/3` : 'On track'}</div>
+    const status = prog.lastOutcome === 'deload' ? 'Recent deload' : prog.lastOutcome === 'repeat' ? `Repeat in play · misses ${prog.failCount}/3` : 'On track';
+    return `<div class="lift-card">
+      <div class="lift-card-head">
+        <div>
+          <div class="lift-card-title">${l.name}</div>
+          <div class="lift-card-sub">Best ${formatWeight(l.best)} · ${status}</div>
+        </div>
+        <div class="lift-card-value">${formatWeight(l.val)}</div>
+      </div>
+      <div class="lift-progress-track"><div class="lift-progress-fill" style="width:${pct}%;background:${l.color};"></div></div>
+      <div class="lift-card-meta"><span>Current work weight</span><span>${Math.max(0, Math.round((l.val / l.max) * 100))}% of runway</span></div>
     </div>`;
   }).join('');
 
   const stats = weeklyStats();
   document.getElementById('week-review').innerHTML = stats.workouts.length || stats.checkins.length ? `
-    <div class="review-grid">
-      <div class="review-cell"><div class="review-k">Workouts</div><div class="review-v">${stats.workouts.length}</div></div>
-      <div class="review-cell"><div class="review-k">Avg sleep</div><div class="review-v">${stats.avgSleep ? stats.avgSleep.toFixed(1) : '—'}</div></div>
-      <div class="review-cell"><div class="review-k">BW trend</div><div class="review-v" style="font-size:18px;">${bodyweightTrendText()}</div></div>
+    <div class="review-hero">
+      <div class="review-hero-top">
+        <div>
+          <div class="review-hero-title">Weekly signal check</div>
+          <div class="review-hero-sub">Your training, recovery, and scale trend in one glance.</div>
+        </div>
+        <div class="review-badge">${stats.workouts.length}/${state.profile.days || 3} workouts</div>
+      </div>
+      <div class="review-grid">
+        <div class="review-cell"><div class="review-k">Workouts</div><div class="review-v">${stats.workouts.length}</div></div>
+        <div class="review-cell"><div class="review-k">Avg sleep</div><div class="review-v">${stats.avgSleep ? stats.avgSleep.toFixed(1) : '—'}</div></div>
+        <div class="review-cell"><div class="review-k">BW trend</div><div class="review-v" style="font-size:18px;">${bodyweightTrendText()}</div></div>
+      </div>
+      <div class="review-note">${weeklyReviewText(stats)}</div>
     </div>
-    <div class="review-note">${weeklyReviewText(stats)}</div>
   ` : '<p style="color:var(--muted);font-size:13px;">Log a few workouts and check-ins to unlock a weekly review.</p>';
 
   renderMilestones();
@@ -1692,7 +1804,10 @@ function renderProgress() {
         const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
         const summary = (w.exerciseResults || []).map(r => `${r.name.split(' ')[0]}: ${r.outcome}`).join(' · ');
         return `<div class="history-row">
-          <div><div style="font-weight:500;">Workout ${w.type}</div><div class="history-date">${ds} · ${summary || 'session logged'}</div></div>
+          <div>
+            <div style="font-weight:700;">Workout ${w.type}</div>
+            <div class="history-date">${ds} · ${summary || 'session logged'}</div>
+          </div>
           <div style="text-align:right;font-size:13px;color:var(--muted);">${w.successfulSets || 0}/${w.plannedSets || w.sets.length} good sets</div>
         </div>`;
       }).join('')
