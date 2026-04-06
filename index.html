@@ -1,0 +1,650 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<title>StrongLifts AI — stronglifts.itricky.com</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<style>
+/* ── Reset & Variables ─────────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
+:root{
+  --bg:#0f0f0f;
+  --bg2:#181818;
+  --bg3:#222;
+  --border:#2a2a2a;
+  --text:#f0ede8;
+  --muted:#888;
+  --hint:#444;
+  --purple:#7c6ef5;
+  --purple-dim:#2a2650;
+  --green:#3ecf8e;
+  --green-dim:#0d3326;
+  --amber:#f5a623;
+  --amber-dim:#3a2700;
+  --red:#f06060;
+  --font-display:'Barlow Condensed',sans-serif;
+  --font-body:'DM Sans',sans-serif;
+  --r:10px;
+  --api:https://stronglifts-api.itricky.com;
+}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.5;}
+
+/* ── Layout ────────────────────────────────────────────────────── */
+.app{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;}
+.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;border-bottom:1px solid var(--border);}
+.logo{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:.5px;}
+.logo span{color:var(--purple);}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite;}
+.sync-dot.err{background:var(--red);}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+
+.content{flex:1;overflow-y:auto;padding:16px 20px 100px;}
+
+/* ── Nav ───────────────────────────────────────────────────────── */
+.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:var(--bg2);border-top:1px solid var(--border);z-index:100;}
+.nav-btn{flex:1;padding:10px 0 14px;border:none;background:none;color:var(--muted);font-family:var(--font-body);font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color .15s;}
+.nav-btn.active{color:var(--purple);}
+.nav-icon{font-size:20px;line-height:1;}
+
+/* ── Section visibility ────────────────────────────────────────── */
+.section{display:none;}.section.active{display:block;}
+
+/* ── Cards ─────────────────────────────────────────────────────── */
+.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;}
+.card-title{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:.3px;margin-bottom:12px;color:var(--text);}
+
+/* ── Metric grid ───────────────────────────────────────────────── */
+.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
+.metric{background:var(--bg3);border-radius:8px;padding:12px 10px;}
+.metric-label{font-size:11px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
+.metric-value{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1;}
+.metric-sub{font-size:11px;color:var(--hint);margin-top:3px;}
+
+/* ── Progress bars ─────────────────────────────────────────────── */
+.bar-wrap{margin:8px 0;}
+.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;}
+.bar-bg{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
+.bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
+
+/* ── Exercise rows ─────────────────────────────────────────────── */
+.ex-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
+.ex-row:last-child{border-bottom:none;}
+.ex-name{font-weight:500;font-size:15px;}
+.ex-detail{font-size:12px;color:var(--muted);margin-top:2px;}
+.ex-weight{font-family:var(--font-display);font-size:22px;font-weight:700;}
+.ex-sets{font-size:11px;color:var(--muted);}
+
+/* ── Badges ────────────────────────────────────────────────────── */
+.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;letter-spacing:.02em;}
+.b-purple{background:var(--purple-dim);color:var(--purple);}
+.b-green{background:var(--green-dim);color:var(--green);}
+.b-amber{background:var(--amber-dim);color:var(--amber);}
+
+/* ── AI insight box ────────────────────────────────────────────── */
+.ai-box{background:var(--purple-dim);border:1px solid #3d3580;border-radius:8px;padding:12px 14px;margin-top:10px;}
+.ai-box-label{font-size:11px;font-weight:500;color:var(--purple);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
+.ai-box p{font-size:13px;color:#c5c0ff;line-height:1.55;}
+
+/* ── Buttons ───────────────────────────────────────────────────── */
+.btn{width:100%;padding:11px;font-size:14px;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text);font-family:var(--font-body);text-align:left;display:flex;justify-content:space-between;align-items:center;margin-top:8px;transition:background .15s;}
+.btn:hover{background:var(--bg3);}
+.btn-primary{background:var(--purple);border-color:var(--purple);color:#fff;justify-content:center;font-weight:500;}
+.btn-primary:hover{background:#6a5ee8;}
+
+/* ── Log set input ─────────────────────────────────────────────── */
+.set-logger{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px;}
+.set-logger input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:var(--font-body);font-size:15px;width:100%;}
+.set-logger input::placeholder{color:var(--hint);}
+.log-btn{background:var(--purple);border:none;border-radius:8px;color:#fff;font-size:20px;padding:0 16px;cursor:pointer;}
+
+/* ── Week dots ─────────────────────────────────────────────────── */
+.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;}
+.wday-name{font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px;text-transform:uppercase;}
+.wday-dot{width:32px;height:32px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
+.dot-done{background:var(--purple);color:#fff;}
+.dot-rest{background:var(--bg3);color:var(--hint);}
+.dot-today{border:2px solid var(--purple);color:var(--purple);}
+.dot-future{background:var(--bg3);color:var(--hint);opacity:.4;}
+
+/* ── Toggle ────────────────────────────────────────────────────── */
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
+.toggle-row:last-child{border-bottom:none;}
+.toggle-label{font-size:14px;color:var(--text);}
+.toggle-desc{font-size:12px;color:var(--muted);margin-top:2px;}
+.tog{position:relative;width:40px;height:24px;flex-shrink:0;}
+.tog input{opacity:0;width:0;height:0;}
+.tog-slider{position:absolute;inset:0;background:var(--bg3);border-radius:12px;cursor:pointer;transition:background .2s;border:1px solid var(--border);}
+.tog-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:transform .2s,background .2s;}
+.tog input:checked+.tog-slider{background:var(--purple);border-color:var(--purple);}
+.tog input:checked+.tog-slider:before{transform:translateX(16px);background:#fff;}
+
+/* ── Meal rows ─────────────────────────────────────────────────── */
+.meal-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+.meal-row:last-child{border-bottom:none;}
+.meal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:12px;}
+.meal-name{font-weight:500;font-size:14px;}
+.meal-detail{font-size:12px;color:var(--muted);}
+.meal-cals{font-family:var(--font-display);font-size:18px;font-weight:700;white-space:nowrap;margin-left:auto;}
+.meal-macro{font-size:11px;color:var(--muted);text-align:right;}
+
+/* ── Prep card ─────────────────────────────────────────────────── */
+.prep-card{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
+.prep-title{font-weight:500;font-size:14px;margin-bottom:6px;}
+.prep-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
+.prep-steps{font-size:13px;color:var(--muted);line-height:1.55;}
+
+/* ── History list ──────────────────────────────────────────────── */
+.history-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
+.history-row:last-child{border-bottom:none;}
+.history-date{font-size:12px;color:var(--muted);}
+
+/* ── Form inputs ───────────────────────────────────────────────── */
+.form-group{margin-bottom:14px;}
+.form-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;}
+select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;}
+.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
+
+/* ── Toast ─────────────────────────────────────────────────────── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
+.toast.show{opacity:1;}
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- Top bar -->
+  <div class="topbar">
+    <div class="logo">Strong<span>Lifts</span> AI</div>
+    <div style="display:flex;align-items:center;gap:8px;">
+      <span id="sync-label" style="font-size:12px;color:var(--muted);">saved</span>
+      <div class="sync-dot" id="sync-dot"></div>
+    </div>
+  </div>
+
+  <!-- Content -->
+  <div class="content">
+
+    <!-- ── TODAY ──────────────────────────────────────────────── -->
+    <div id="sec-today" class="section active">
+      <div class="metrics" id="today-metrics">
+        <div class="metric"><div class="metric-label">Week</div><div class="metric-value" id="m-week">W1</div><div class="metric-sub">Day 1 of 3</div></div>
+        <div class="metric"><div class="metric-label">Workout</div><div class="metric-value" id="m-workout">A</div><div class="metric-sub">Squat focus</div></div>
+        <div class="metric"><div class="metric-label">Streak</div><div class="metric-value" id="m-streak" style="color:var(--green);">0</div><div class="metric-sub">workouts</div></div>
+      </div>
+
+      <div class="week-grid" id="week-dots"></div>
+
+      <div class="card" id="workout-card">
+        <div class="card-title" id="workout-title">Workout A</div>
+        <div id="exercise-list"></div>
+        <div class="set-logger">
+          <input type="number" id="log-weight" placeholder="kg" min="0" step="2.5">
+          <input type="number" id="log-reps" placeholder="reps" min="1" max="20">
+          <button class="log-btn" onclick="logSet()" title="Log set">+</button>
+        </div>
+        <div id="log-history" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
+        <div class="ai-box" id="today-ai-box">
+          <div class="ai-box-label">AI Coach</div>
+          <p id="today-ai-text">Loading your program...</p>
+        </div>
+        <button class="btn" style="margin-top:12px;" onclick="completeWorkout()">
+          Mark workout complete <span style="color:var(--green);">✓</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- ── PROGRESS ────────────────────────────────────────────── -->
+    <div id="sec-progress" class="section">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Workouts</div><div class="metric-value" id="p-total">0</div><div class="metric-sub">all time</div></div>
+        <div class="metric"><div class="metric-label">Squat</div><div class="metric-value" id="p-squat">—</div><div class="metric-sub">best kg</div></div>
+        <div class="metric"><div class="metric-label">Deadlift</div><div class="metric-value" id="p-dead">—</div><div class="metric-sub">best kg</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Lift progress</div>
+        <div id="lift-bars"></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Recent workouts</div>
+        <div id="history-list"><p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p></div>
+      </div>
+    </div>
+
+    <!-- ── NUTRITION ───────────────────────────────────────────── -->
+    <div id="sec-nutrition" class="section">
+      <div class="metrics">
+        <div class="metric"><div class="metric-label">Calories</div><div class="metric-value" id="n-cals" style="color:var(--green);">2,340</div><div class="metric-sub" id="n-day-type">training day</div></div>
+        <div class="metric"><div class="metric-label">Protein</div><div class="metric-value" id="n-protein">185g</div><div class="metric-sub">priority #1</div></div>
+        <div class="metric"><div class="metric-label">Carbs</div><div class="metric-value" id="n-carbs">220g</div><div class="metric-sub" id="n-carb-note">higher today</div></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Today's meals</div>
+        <div class="meal-row"><div class="meal-dot" style="background:var(--green);"></div><div style="flex:1;"><div class="meal-name">Breakfast</div><div class="meal-detail">Greek yogurt bowl + eggs + oats</div></div><div><div class="meal-cals">540</div><div class="meal-macro">42p / 52c</div></div></div>
+        <div class="meal-row"><div class="meal-dot" style="background:var(--purple);"></div><div style="flex:1;"><div class="meal-name">Pre-workout</div><div class="meal-detail">Rice + chicken + banana</div></div><div><div class="meal-cals">620</div><div class="meal-macro">48p / 80c</div></div></div>
+        <div class="meal-row"><div class="meal-dot" style="background:var(--amber);"></div><div style="flex:1;"><div class="meal-name">Post-workout</div><div class="meal-detail">Shake + rice cakes + PB</div></div><div><div class="meal-cals">480</div><div class="meal-macro">40p / 44c</div></div></div>
+        <div class="meal-row"><div class="meal-dot" style="background:var(--muted);"></div><div style="flex:1;"><div class="meal-name">Dinner</div><div class="meal-detail">Salmon + sweet potato + greens</div></div><div><div class="meal-cals">700</div><div class="meal-macro">55p / 44c</div></div></div>
+        <div class="ai-box">
+          <div class="ai-box-label">Nutrition AI</div>
+          <p id="nutrition-ai-text">Training day: eat more carbs around your workout. Hit 185g protein no matter what — that's the #1 lever for recomposition.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Sunday meal prep</div>
+        <div class="prep-card">
+          <div class="prep-title">Oven chicken breast (2 kg)</div>
+          <div class="prep-meta"><span class="badge b-green">35 min</span><span class="badge b-purple">62g protein / 200g</span></div>
+          <div class="prep-steps">Season with olive oil, garlic powder, paprika, salt. Bake 200°C for 22–25 min. Portion into 200g containers.</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-title">White rice (1.5 kg dry)</div>
+          <div class="prep-meta"><span class="badge b-green">20 min</span><span class="badge b-amber">carb base</span></div>
+          <div class="prep-steps">2:1 water ratio. Portion 150g (training days) / 80g (rest days).</div>
+        </div>
+        <div class="prep-card">
+          <div class="prep-title">Overnight oat jars (5)</div>
+          <div class="prep-meta"><span class="badge b-green">10 min</span><span class="badge b-purple">42g protein / jar</span></div>
+          <div class="prep-steps">80g oats + 200g Greek yogurt + 150ml milk + 1 tbsp honey. Refrigerate overnight.</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── SETTINGS ────────────────────────────────────────────── -->
+    <div id="sec-settings" class="section">
+      <div class="card">
+        <div class="card-title">Your profile</div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Body weight (kg)</label>
+            <input type="number" id="s-bw" value="85" min="40" max="200">
+          </div>
+          <div class="form-group">
+            <label class="form-label">Training days/week</label>
+            <select id="s-days"><option>2</option><option selected>3</option><option>4</option></select>
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-group">
+            <label class="form-label">Goal</label>
+            <select id="s-goal"><option selected>Recomposition</option><option>Lean bulk</option><option>Cut</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Training age</label>
+            <select id="s-age"><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option></select>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="saveSettings()">Save profile</button>
+      </div>
+
+      <div class="card">
+        <div class="card-title">AI features</div>
+        <div class="toggle-row"><div><div class="toggle-label">Adaptive progression</div><div class="toggle-desc">AI adjusts weight increments</div></div><label class="tog"><input type="checkbox" id="t-adapt" checked><span class="tog-slider"></span></label></div>
+        <div class="toggle-row"><div><div class="toggle-label">Smart deload detection</div><div class="toggle-desc">Auto-deloads on stalls</div></div><label class="tog"><input type="checkbox" id="t-deload" checked><span class="tog-slider"></span></label></div>
+        <div class="toggle-row"><div><div class="toggle-label">Calorie cycling</div><div class="toggle-desc">Higher carbs on training days</div></div><label class="tog"><input type="checkbox" id="t-cycling" checked><span class="tog-slider"></span></label></div>
+        <div class="toggle-row"><div><div class="toggle-label">Weekly meal plan</div><div class="toggle-desc">AI generates plan every Sunday</div></div><label class="tog"><input type="checkbox" id="t-mealplan" checked><span class="tog-slider"></span></label></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Starting weights (kg)</div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Squat</label><input type="number" id="sw-squat" placeholder="e.g. 60" step="2.5"></div>
+          <div class="form-group"><label class="form-label">Bench press</label><input type="number" id="sw-bench" placeholder="e.g. 40" step="2.5"></div>
+        </div>
+        <div class="form-row">
+          <div class="form-group"><label class="form-label">Deadlift</label><input type="number" id="sw-dead" placeholder="e.g. 80" step="2.5"></div>
+          <div class="form-group"><label class="form-label">Overhead press</label><input type="number" id="sw-ohp" placeholder="e.g. 30" step="2.5"></div>
+        </div>
+        <div class="form-group"><label class="form-label">Barbell row</label><input type="number" id="sw-row" placeholder="e.g. 40" step="2.5" style="width:50%;"></div>
+        <button class="btn btn-primary" onclick="saveWeights()">Save weights</button>
+      </div>
+
+      <div class="card" style="margin-top:8px;">
+        <div class="card-title">Data</div>
+        <button class="btn" onclick="exportData()">Export all data (JSON) ↗</button>
+        <button class="btn" style="color:var(--red);border-color:var(--red);" onclick="confirmReset()">Reset all data</button>
+      </div>
+    </div>
+
+  </div><!-- /content -->
+
+  <!-- Bottom nav -->
+  <nav class="nav">
+    <button class="nav-btn active" id="nav-today" onclick="showSection('today')">
+      <span class="nav-icon">⚡</span>Today
+    </button>
+    <button class="nav-btn" id="nav-progress" onclick="showSection('progress')">
+      <span class="nav-icon">📈</span>Progress
+    </button>
+    <button class="nav-btn" id="nav-nutrition" onclick="showSection('nutrition')">
+      <span class="nav-icon">🥗</span>Nutrition
+    </button>
+    <button class="nav-btn" id="nav-settings" onclick="showSection('settings')">
+      <span class="nav-icon">⚙️</span>Settings
+    </button>
+  </nav>
+</div>
+
+<!-- Toast -->
+<div class="toast" id="toast"></div>
+
+<script>
+// ── CONFIG ──────────────────────────────────────────────────────────────────
+const API = 'https://stronglifts-api.itricky.com';
+const USER_KEY = 'user_1'; // single-user for now; extend with auth later
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let state = {
+  profile: { bw: 85, days: 3, goal: 'Recomposition', age: 'Intermediate' },
+  weights: { squat: 60, bench: 40, dead: 80, ohp: 30, row: 40 },
+  workouts: [],       // array of { date, type:'A'|'B', sets:[{ex,kg,reps}] }
+  currentSets: [],    // sets logged in current session
+  settings: { adapt: true, deload: true, cycling: true, mealplan: true },
+};
+
+// ── PERSISTENCE ─────────────────────────────────────────────────────────────
+async function saveToCloud(partial = {}) {
+  setSyncState('syncing');
+  try {
+    const payload = { ...state, ...partial, updatedAt: Date.now() };
+    const r = await fetch(`${API}/data/${USER_KEY}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!r.ok) throw new Error(r.status);
+    setSyncState('ok');
+    localStorage.setItem('sl_cache', JSON.stringify(payload));
+  } catch (e) {
+    setSyncState('err');
+    // Fallback: save locally
+    localStorage.setItem('sl_cache', JSON.stringify({ ...state, updatedAt: Date.now() }));
+    showToast('Saved locally (offline mode)');
+  }
+}
+
+async function loadFromCloud() {
+  setSyncState('syncing');
+  try {
+    const r = await fetch(`${API}/data/${USER_KEY}`);
+    if (r.ok) {
+      const { data } = await r.json();
+      state = { ...state, ...data };
+      localStorage.setItem('sl_cache', JSON.stringify(state));
+      setSyncState('ok');
+    } else if (r.status === 404) {
+      // First time — no data yet
+      setSyncState('ok');
+    } else throw new Error(r.status);
+  } catch (e) {
+    // Try local cache
+    const cached = localStorage.getItem('sl_cache');
+    if (cached) { state = { ...state, ...JSON.parse(cached) }; showToast('Offline — using cached data'); }
+    setSyncState('err');
+  }
+}
+
+function setSyncState(s) {
+  const dot = document.getElementById('sync-dot');
+  const lbl = document.getElementById('sync-label');
+  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : s === 'err' ? ' err' : '');
+  lbl.textContent = s === 'syncing' ? 'saving...' : s === 'err' ? 'offline' : 'saved';
+}
+
+// ── NAVIGATION ───────────────────────────────────────────────────────────────
+function showSection(name) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
+  document.getElementById('sec-' + name).classList.add('active');
+  document.getElementById('nav-' + name).classList.add('active');
+  if (name === 'progress') renderProgress();
+  if (name === 'nutrition') renderNutrition();
+}
+
+// ── WORKOUT LOGIC ─────────────────────────────────────────────────────────────
+const WORKOUT_A = [
+  { key: 'squat',  name: 'Squat',        sets: '5×5' },
+  { key: 'bench',  name: 'Bench press',  sets: '5×5' },
+  { key: 'row',    name: 'Barbell row',  sets: '5×5' },
+];
+const WORKOUT_B = [
+  { key: 'squat',  name: 'Squat',        sets: '5×5' },
+  { key: 'ohp',    name: 'Overhead press', sets: '5×5' },
+  { key: 'dead',   name: 'Deadlift',     sets: '1×5' },
+];
+
+function currentWorkoutType() {
+  const count = state.workouts.length;
+  return count % 2 === 0 ? 'A' : 'B';
+}
+
+function currentWeights() {
+  // Progress 2.5kg per session for upper body, 5kg for squat/deadlift
+  const base = state.weights;
+  const sessions = state.workouts.length;
+  return {
+    squat: base.squat + sessions * 5,
+    bench: base.bench + sessions * 2.5,
+    row:   base.row   + sessions * 2.5,
+    ohp:   base.ohp   + sessions * 2.5,
+    dead:  base.dead  + sessions * 5,
+  };
+}
+
+function renderToday() {
+  const type = currentWorkoutType();
+  const wts = currentWeights();
+  const exercises = type === 'A' ? WORKOUT_A : WORKOUT_B;
+  const week = Math.floor(state.workouts.length / 3) + 1;
+  const streak = state.workouts.length;
+
+  document.getElementById('m-week').textContent = 'W' + week;
+  document.getElementById('m-workout').textContent = type;
+  document.getElementById('m-streak').textContent = streak;
+  document.getElementById('workout-title').textContent = `Workout ${type}`;
+
+  // Week dots
+  const days = ['M','T','W','T','F','S','S'];
+  const today = new Date().getDay(); // 0=Sun
+  const dotMap = [1,2,3,4,5,6,0]; // Mon=0..Sun=6
+  const todayIdx = dotMap.indexOf(today);
+  document.getElementById('week-dots').innerHTML = days.map((d, i) => {
+    let cls = 'dot-future';
+    if (i < todayIdx) cls = i % 2 === 0 ? 'dot-done' : 'dot-rest';
+    else if (i === todayIdx) cls = 'dot-today';
+    return `<div><div class="wday-name">${d}</div><div class="wday-dot ${cls}">${cls === 'dot-done' ? (i%4===0?'A':'B') : '—'}</div></div>`;
+  }).join('');
+
+  // Exercise list
+  document.getElementById('exercise-list').innerHTML = exercises.map(ex => `
+    <div class="ex-row">
+      <div>
+        <div class="ex-name">${ex.name}</div>
+        <div class="ex-detail">${ex.sets}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="ex-weight">${wts[ex.key]} kg</div>
+        <div class="ex-sets">auto-progressed</div>
+      </div>
+    </div>
+  `).join('');
+
+  // Session log
+  renderSessionLog();
+
+  // AI insight
+  const insights = [
+    `Workout ${type} — focus on hitting depth on every squat rep before worrying about weight. You're progressing well.`,
+    `Keep rest periods 3–5 minutes between heavy sets. Rushing rest is the #1 reason for stalled progression.`,
+    `Week ${week}: you're in the sweet spot of beginner gains. Consistency beats everything right now.`,
+    `Make sure you're eating enough protein today — ${Math.round(state.profile.bw * 2.2)}g minimum to support muscle growth.`,
+  ];
+  document.getElementById('today-ai-text').textContent = insights[state.workouts.length % insights.length];
+}
+
+function renderSessionLog() {
+  const el = document.getElementById('log-history');
+  if (!state.currentSets.length) { el.textContent = ''; return; }
+  el.innerHTML = state.currentSets.slice(-5).map(s =>
+    `<span style="margin-right:12px;">✓ ${s.ex}: ${s.kg}kg × ${s.reps}</span>`
+  ).join('');
+}
+
+function logSet() {
+  const kg = parseFloat(document.getElementById('log-weight').value);
+  const reps = parseInt(document.getElementById('log-reps').value);
+  if (!kg || !reps) { showToast('Enter weight and reps'); return; }
+  const type = currentWorkoutType();
+  const exercises = type === 'A' ? WORKOUT_A : WORKOUT_B;
+  const ex = exercises[state.currentSets.length % exercises.length].name;
+  state.currentSets.push({ ex, kg, reps });
+  renderSessionLog();
+  document.getElementById('log-weight').value = '';
+  document.getElementById('log-reps').value = '';
+  showToast(`Logged: ${ex} ${kg}kg × ${reps}`);
+}
+
+function completeWorkout() {
+  const type = currentWorkoutType();
+  const wts = currentWeights();
+  state.workouts.push({
+    date: new Date().toISOString(),
+    type,
+    weights: { ...wts },
+    sets: [...state.currentSets],
+  });
+  state.currentSets = [];
+  saveToCloud();
+  renderToday();
+  showToast('Workout complete! 💪');
+}
+
+// ── PROGRESS ──────────────────────────────────────────────────────────────────
+function renderProgress() {
+  const wts = currentWeights();
+  const count = state.workouts.length;
+
+  document.getElementById('p-total').textContent = count;
+  document.getElementById('p-squat').textContent = wts.squat || '—';
+  document.getElementById('p-dead').textContent = wts.dead || '—';
+
+  // Lift bars
+  const lifts = [
+    { name: 'Squat',         val: wts.squat, max: state.weights.squat + 200, color: '#7c6ef5' },
+    { name: 'Deadlift',      val: wts.dead,  max: state.weights.dead  + 250, color: '#3ecf8e' },
+    { name: 'Bench press',   val: wts.bench, max: state.weights.bench + 150, color: '#378ADD' },
+    { name: 'Barbell row',   val: wts.row,   max: state.weights.row   + 120, color: '#f5a623' },
+    { name: 'Overhead press',val: wts.ohp,   max: state.weights.ohp   + 100, color: '#f06060' },
+  ];
+  document.getElementById('lift-bars').innerHTML = lifts.map(l => {
+    const pct = Math.min(100, Math.round((l.val / l.max) * 100));
+    return `<div class="bar-wrap">
+      <div class="bar-label"><span>${l.name}</span><span>${l.val} kg</span></div>
+      <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${l.color};"></div></div>
+    </div>`;
+  }).join('');
+
+  // History
+  const hist = state.workouts.slice(-10).reverse();
+  document.getElementById('history-list').innerHTML = hist.length
+    ? hist.map(w => {
+        const d = new Date(w.date);
+        const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        return `<div class="history-row">
+          <div><div style="font-weight:500;">Workout ${w.type}</div><div class="history-date">${ds}</div></div>
+          <div style="text-align:right;font-size:13px;color:var(--muted);">${w.sets.length || 0} sets logged</div>
+        </div>`;
+      }).join('')
+    : '<p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p>';
+}
+
+// ── NUTRITION ─────────────────────────────────────────────────────────────────
+function renderNutrition() {
+  const type = currentWorkoutType();
+  const isTraining = new Date().getDay() % 2 !== 0; // rough proxy
+  const cals = isTraining ? 2340 : 1980;
+  const carbs = isTraining ? 220 : 140;
+  document.getElementById('n-cals').textContent = cals.toLocaleString();
+  document.getElementById('n-carbs').textContent = carbs + 'g';
+  document.getElementById('n-day-type').textContent = isTraining ? 'training day' : 'rest day';
+  document.getElementById('n-carb-note').textContent = isTraining ? 'higher today' : 'lower today';
+  document.getElementById('nutrition-ai-text').textContent = isTraining
+    ? `Training day: eat most carbs around your workout window. Hit ${Math.round(state.profile.bw * 2.2)}g protein — non-negotiable for muscle retention.`
+    : `Rest day: calories drop to ${cals}, carbs cut back. Keep protein high. Great day for meal prep if Sunday.`;
+}
+
+// ── SETTINGS ──────────────────────────────────────────────────────────────────
+function populateSettings() {
+  document.getElementById('s-bw').value = state.profile.bw;
+  document.getElementById('sw-squat').value = state.weights.squat || '';
+  document.getElementById('sw-bench').value = state.weights.bench || '';
+  document.getElementById('sw-dead').value = state.weights.dead || '';
+  document.getElementById('sw-ohp').value = state.weights.ohp || '';
+  document.getElementById('sw-row').value = state.weights.row || '';
+  document.getElementById('t-adapt').checked = state.settings.adapt;
+  document.getElementById('t-deload').checked = state.settings.deload;
+  document.getElementById('t-cycling').checked = state.settings.cycling;
+  document.getElementById('t-mealplan').checked = state.settings.mealplan;
+}
+
+function saveSettings() {
+  state.profile.bw = parseFloat(document.getElementById('s-bw').value) || 85;
+  state.settings.adapt   = document.getElementById('t-adapt').checked;
+  state.settings.deload  = document.getElementById('t-deload').checked;
+  state.settings.cycling = document.getElementById('t-cycling').checked;
+  state.settings.mealplan= document.getElementById('t-mealplan').checked;
+  saveToCloud();
+  showToast('Profile saved ✓');
+}
+
+function saveWeights() {
+  state.weights.squat = parseFloat(document.getElementById('sw-squat').value) || 60;
+  state.weights.bench = parseFloat(document.getElementById('sw-bench').value) || 40;
+  state.weights.dead  = parseFloat(document.getElementById('sw-dead').value)  || 80;
+  state.weights.ohp   = parseFloat(document.getElementById('sw-ohp').value)   || 30;
+  state.weights.row   = parseFloat(document.getElementById('sw-row').value)   || 40;
+  saveToCloud();
+  renderToday();
+  showToast('Starting weights saved ✓');
+}
+
+function exportData() {
+  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = 'stronglifts-data.json'; a.click();
+}
+
+function confirmReset() {
+  if (confirm('Reset ALL data? This cannot be undone.')) {
+    state = { profile:{bw:85,days:3,goal:'Recomposition',age:'Intermediate'}, weights:{squat:60,bench:40,dead:80,ohp:30,row:40}, workouts:[], currentSets:[], settings:{adapt:true,deload:true,cycling:true,mealplan:true} };
+    saveToCloud();
+    renderToday();
+    populateSettings();
+    showToast('Data reset');
+  }
+}
+
+// ── UTILS ─────────────────────────────────────────────────────────────────────
+function showToast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), 2500);
+}
+
+// ── INIT ──────────────────────────────────────────────────────────────────────
+(async () => {
+  await loadFromCloud();
+  renderToday();
+  renderNutrition();
+  populateSettings();
+})();
+</script>
+</body>
+</html>
