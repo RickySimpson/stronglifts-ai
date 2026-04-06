@@ -429,6 +429,239 @@ select,input[type=number]{
   background:#eef9f1;color:#2b8f41;border-radius:999px;
 }
 
+
+
+/* ── Today hero polish ───────────────────────────────────────── */
+:root{
+  --bg:#fffdfa;
+  --bg2:#ffffff;
+  --bg3:#f7f2ee;
+  --border:#e8ddd4;
+  --text:#171311;
+  --muted:#6f635b;
+  --hint:#9a8f87;
+  --red:#c92f2f;
+  --purple:var(--red);
+  --purple-dim:#fff0ef;
+  --card-shadow:0 10px 30px rgba(34,20,12,.06);
+}
+html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(--text);}
+.app{max-width:520px;}
+.topbar{
+  padding:18px 22px 10px;
+  border-bottom:0;
+  background:rgba(255,253,250,.88);
+  backdrop-filter:blur(14px);
+}
+.logo{font-size:24px;letter-spacing:.04em;}
+.content{padding:18px 20px 112px;}
+.card{
+  background:rgba(255,255,255,.84);
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:22px;
+  padding:18px;
+  box-shadow:var(--card-shadow);
+}
+.card-title{font-size:20px;letter-spacing:.02em;margin-bottom:14px;}
+.metrics{gap:10px;margin-bottom:18px;}
+.metric{
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:18px;
+  background:linear-gradient(180deg,#fff 0%,#fbf8f4 100%);
+  padding:14px 12px;
+  box-shadow:0 6px 16px rgba(34,20,12,.04);
+}
+.metric-value{font-size:28px;}
+.metric-sub{color:#90837b;}
+#week-dots{margin-bottom:18px;}
+.wday-dot{width:34px;height:34px;border-radius:14px;}
+.dot-rest,.dot-future{background:#f5eee8;}
+.dot-today{background:#fff5f5;}
+.nav{
+  background:rgba(255,255,255,.92);
+  backdrop-filter:blur(12px);
+  border-top:1px solid rgba(32,22,16,.08);
+  box-shadow:0 -10px 28px rgba(34,20,12,.06);
+}
+
+#workout-card{
+  background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,rgba(251,247,243,.98) 100%);
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:28px;
+  padding:20px;
+  box-shadow:0 18px 42px rgba(34,20,12,.08);
+}
+#workout-card .card-title{
+  font-size:26px;
+  margin-bottom:12px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+#exercise-list{
+  display:grid;
+  grid-template-columns:repeat(3,minmax(0,1fr));
+  gap:10px;
+  margin-bottom:14px;
+}
+.ex-row{
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:18px;
+  padding:14px 12px;
+  background:linear-gradient(180deg,#fff 0%,#f9f5f1 100%);
+  display:block;
+}
+.ex-name{font-size:14px;font-weight:700;line-height:1.1;}
+.ex-detail{font-size:11px;margin-top:6px;}
+.ex-weight{font-size:28px;line-height:.95;margin-top:12px;}
+.ex-sets{font-size:11px;margin-top:6px;color:#8e8178;}
+.session-tools{
+  margin-top:2px;
+  padding:12px;
+  border-radius:18px;
+  background:#fff;
+  border:1px solid rgba(32,22,16,.06);
+}
+.rest-timer{
+  background:linear-gradient(180deg,#ffffff 0%,#faf5f0 100%);
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:16px;
+  padding:12px 14px;
+}
+.rest-timer span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
+.rest-timer strong{font-size:30px;}
+.mini-btn{
+  border-radius:14px;
+  padding:11px 14px;
+  background:#fff;
+  border:1px solid rgba(32,22,16,.06);
+}
+.mini-btn:hover{background:#fbf7f3;}
+
+.warmup-box{
+  margin-top:14px;
+  padding:0;
+  overflow:hidden;
+  border-radius:18px;
+  background:#fff;
+  border:1px solid rgba(32,22,16,.06);
+}
+.warmup-toggle{
+  appearance:none;border:none;background:none;color:var(--text);width:100%;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:14px 16px;cursor:pointer;font:inherit;font-weight:700;
+}
+.warmup-toggle-meta{font-size:12px;color:var(--red);font-weight:600;}
+#warmup-list{padding:0 16px 14px;}
+.warmup-box.collapsed #warmup-list{display:none;}
+.warmup-group + .warmup-group{margin-top:10px;}
+.warmup-row{padding:9px 0;border-bottom:1px solid rgba(32,22,16,.06);}
+.warmup-row-head{padding-top:0;padding-bottom:10px;}
+.warmup-row:last-child{border-bottom:none;}
+
+.set-plan{gap:14px;margin-top:16px;}
+.exercise-card{
+  background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);
+  border:1px solid rgba(32,22,16,.06);
+  border-radius:22px;
+  padding:16px;
+  box-shadow:0 10px 24px rgba(34,20,12,.05);
+}
+.exercise-card.complete-card{opacity:.9;}
+.exercise-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;}
+.exercise-copy{flex:1;min-width:0;}
+.exercise-title{font-size:19px;font-weight:800;letter-spacing:.01em;}
+.exercise-meta{font-size:12px;color:var(--muted);margin-top:4px;}
+.exercise-next{font-size:12px;color:#8c4545;margin-top:8px;font-weight:600;}
+.exercise-weight-badge{
+  min-width:96px;
+  border-radius:18px;
+  padding:10px 12px;
+  background:linear-gradient(180deg,#fff4f4 0%,#ffe8e8 100%);
+  border:1px solid rgba(201,47,47,.10);
+  text-align:right;
+}
+.exercise-weight-badge strong{display:block;font-family:var(--font-display);font-size:26px;line-height:.95;color:var(--red);}
+.exercise-weight-badge span{display:block;font-size:11px;color:#8c6e68;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;}
+.set-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
+.set-pill{
+  width:40px;height:40px;border-radius:14px;
+  display:flex;align-items:center;justify-content:center;
+  font-size:13px;font-weight:800;
+  border:1px solid rgba(32,22,16,.08);
+  background:#fff;color:#8a7d75;
+  box-shadow:inset 0 -1px 0 rgba(0,0,0,.02);
+}
+.set-pill.pending{background:#f7f1eb;color:#9b8f87;}
+.set-pill.active{background:linear-gradient(180deg,#fff6f6 0%,#ffeaea 100%);color:var(--red);border-color:rgba(201,47,47,.18);box-shadow:0 8px 18px rgba(201,47,47,.12);}
+.set-pill.done{background:linear-gradient(180deg,#f4fbf5 0%,#ecf8ef 100%);color:var(--green);border-color:rgba(47,158,68,.18);}
+.set-pill.failed{background:linear-gradient(180deg,#fffaf1 0%,#fff2df 100%);color:var(--amber);border-color:rgba(183,121,31,.18);}
+.exercise-controls{display:grid;grid-template-columns:86px 1fr auto;gap:10px;align-items:center;margin-top:16px;}
+.exercise-controls input{
+  background:#fff;border:1px solid rgba(32,22,16,.08);border-radius:14px;padding:12px;
+  text-align:center;font-weight:700;
+}
+.set-complete,.set-fail{border-radius:14px;padding:12px 14px;font-weight:700;}
+.set-complete{background:linear-gradient(180deg,#d83a3a 0%,#c92f2f 100%);box-shadow:0 10px 20px rgba(201,47,47,.18);}
+.set-fail{background:#fff;color:#9d6b19;border:1px solid rgba(183,121,31,.24);}
+.set-fail:hover{background:#fff9ef;}
+
+#log-history{
+  margin-top:14px !important;
+  padding:10px 12px;
+  border-radius:16px;
+  background:#fff;
+  border:1px solid rgba(32,22,16,.06);
+}
+.ai-box{
+  margin-top:16px;
+  padding:16px 16px 16px 18px;
+  border-radius:20px;
+  background:linear-gradient(180deg,#fff3f3 0%,#fff9f7 100%);
+  border:1px solid rgba(201,47,47,.10);
+  position:relative;
+  overflow:hidden;
+}
+.ai-box::before{
+  content:'';
+  position:absolute;
+  left:0;top:0;bottom:0;
+  width:4px;
+  background:linear-gradient(180deg,#df4b4b 0%,#c92f2f 100%);
+}
+.ai-box-label{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--red);margin-bottom:8px;}
+.ai-box p{color:#5e2a2a;font-size:14px;line-height:1.65;max-width:38ch;}
+#workout-card > .btn{
+  margin-top:16px !important;
+  border-radius:18px;
+  padding:14px 16px;
+  background:linear-gradient(180deg,#d83a3a 0%,#c92f2f 100%);
+  border:none;
+  color:#fff;
+  justify-content:center;
+  font-weight:800;
+  box-shadow:0 14px 28px rgba(201,47,47,.18);
+}
+#workout-card > .btn span{color:#fff !important;}
+
+#sec-today > .card:not(#workout-card){
+  background:rgba(255,255,255,.82);
+}
+#sec-today > .card:not(#workout-card) .card-title{font-size:18px;}
+.review-cell,.milestone,.chart-box,.history-detail-row,.prep-card{
+  background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);
+  border:1px solid rgba(32,22,16,.06);
+}
+.chip-btn.active{background:#fff1f1;border-color:rgba(201,47,47,.16);color:var(--red);}
+
+@media (max-width: 430px){
+  #exercise-list{grid-template-columns:1fr;}
+  .exercise-top{flex-direction:column;}
+  .exercise-weight-badge{width:100%;text-align:left;}
+  .exercise-controls{grid-template-columns:1fr 1fr;}
+  .exercise-controls input{grid-column:1/-1;}
+}
+
 </style>
 </head>
 <body>
@@ -464,8 +697,11 @@ select,input[type=number]{
           <button class="mini-btn" onclick="toggleRestTimer()" id="rest-timer-btn">Start</button>
           <button class="mini-btn" onclick="resetRestTimer()">Reset</button>
         </div>
-        <div class="warmup-box">
-          <div class="ai-box-label">Warm-up sets</div>
+        <div class="warmup-box collapsed" id="warmup-box">
+          <button class="warmup-toggle" type="button" onclick="toggleWarmups()">
+            <span>Warm-up sets</span>
+            <span class="warmup-toggle-meta" id="warmup-toggle-meta">Show ramp sets</span>
+          </button>
           <div id="warmup-list"></div>
         </div>
         <div id="set-plan" class="set-plan"></div>
@@ -692,6 +928,7 @@ const defaultState = {
 let state = JSON.parse(JSON.stringify(defaultState));
 let restTimer = { duration: 180, remaining: 180, interval: null, running: false };
 let selectedHistoryLift = 'squat';
+let warmupsOpen = false;
 
 // ── PERSISTENCE ─────────────────────────────────────────────────────────────
 async function saveToCloud(partial = {}) {
@@ -989,8 +1226,8 @@ function renderWarmups() {
     const warmups = buildWarmupSets(ex.key, weights[ex.key]);
     const outcome = state.progress[ex.key]?.lastOutcome || 'new';
     return `
-      <div style="margin-bottom:10px;">
-        <div class="warmup-row" style="padding-top:0;">
+      <div class="warmup-group">
+        <div class="warmup-row warmup-row-head">
           <div>
             <div class="warmup-lift">${ex.name}</div>
             <div class="warmup-note">Work sets at ${formatWeight(weights[ex.key])} · ${ex.label}</div>
@@ -1001,6 +1238,23 @@ function renderWarmups() {
       </div>`;
   }).join('');
   document.getElementById('warmup-list').innerHTML = html;
+  const meta = document.getElementById('warmup-toggle-meta');
+  if (meta) meta.textContent = warmupsOpen ? 'Hide ramp sets' : 'Show ramp sets';
+  syncWarmupBox();
+}
+
+function syncWarmupBox() {
+  const box = document.getElementById('warmup-box');
+  if (!box) return;
+  box.classList.toggle('collapsed', !warmupsOpen);
+}
+
+function toggleWarmups(forceOpen) {
+  if (typeof forceOpen === 'boolean') warmupsOpen = forceOpen;
+  else warmupsOpen = !warmupsOpen;
+  const meta = document.getElementById('warmup-toggle-meta');
+  if (meta) meta.textContent = warmupsOpen ? 'Hide ramp sets' : 'Show ramp sets';
+  syncWarmupBox();
 }
 
 function renderToday() {
@@ -1013,7 +1267,7 @@ function renderToday() {
   document.getElementById('m-week').textContent = 'W' + week;
   document.getElementById('m-workout').textContent = type;
   document.getElementById('m-streak').textContent = streak;
-  document.getElementById('workout-title').textContent = `Workout ${type}`;
+  document.getElementById('workout-title').textContent = `Workout ${type} · ${exercises.length} lifts`;
 
   const days = ['M','T','W','T','F','S','S'];
   const today = new Date().getDay();
@@ -1029,6 +1283,7 @@ function renderToday() {
   document.getElementById('exercise-list').innerHTML = exercises.map(ex => {
     const prog = state.progress[ex.key];
     const failText = prog.failCount ? ` · misses ${prog.failCount}/3` : '';
+    const statusText = prog.lastOutcome === 'deload' ? 'rebuild block' : prog.lastOutcome === 'repeat' ? 'repeat weight' : 'ready to progress';
     return `
       <div class="ex-row">
         <div>
@@ -1037,7 +1292,7 @@ function renderToday() {
         </div>
         <div style="text-align:right;">
           <div class="ex-weight">${formatWeight(wts[ex.key])}</div>
-          <div class="ex-sets">${prog.lastOutcome === 'deload' ? 'deloaded and rebuilding' : prog.lastOutcome === 'repeat' ? 'repeat until all reps land' : 'progress on success'}</div>
+          <div class="ex-sets">${statusText}</div>
         </div>
       </div>
     `;
@@ -1054,31 +1309,35 @@ function renderPlannedSets() {
   const workout = getWorkoutPlan();
   const weights = currentWeights();
   const html = workout.map(ex => {
+    const loggedForLift = state.currentSets.filter(s => s.key === ex.key).length;
     const sets = Array.from({ length: ex.setsTarget }, (_, idx) => {
       const id = `${ex.key}-${idx + 1}`;
       const logged = getLoggedSetById(id);
-      const cls = logged ? (logged.completed ? 'done' : 'failed') : (idx === state.currentSets.filter(s => s.key === ex.key).length ? 'active' : 'pending');
+      const cls = logged ? (logged.completed ? 'done' : 'failed') : (idx === loggedForLift ? 'active' : 'pending');
       const label = logged ? (logged.completed ? '✓' : '×') : String(idx + 1);
       return `<div class="set-pill ${cls}">${label}</div>`;
     }).join('');
-    const nextSet = state.currentSets.filter(s => s.key === ex.key).length + 1;
+    const nextSet = loggedForLift + 1;
     const complete = nextSet > ex.setsTarget;
-    const nextLabel = complete ? 'All sets logged' : `Next: set ${nextSet}/${ex.setsTarget} at ${formatWeight(weights[ex.key])} × ${ex.repsTarget}`;
+    const nextLabel = complete ? 'All sets logged — finish strong.' : `Next up · set ${nextSet}/${ex.setsTarget} at ${formatWeight(weights[ex.key])} × ${ex.repsTarget}`;
     return `
-      <div class="exercise-card">
+      <div class="exercise-card ${complete ? 'complete-card' : ''}">
         <div class="exercise-top">
-          <div>
+          <div class="exercise-copy">
             <div class="exercise-title">${ex.name}</div>
-            <div class="exercise-meta">${ex.label} · work sets at ${formatWeight(weights[ex.key])}</div>
+            <div class="exercise-meta">${ex.label} · ${loggedForLift}/${ex.setsTarget} sets logged</div>
             <div class="exercise-next">${nextLabel}</div>
           </div>
-          <div>${getOutcomeBadge(state.progress[ex.key]?.lastOutcome || 'new')}</div>
+          <div class="exercise-weight-badge">
+            <strong>${formatWeight(weights[ex.key])}</strong>
+            <span>work weight</span>
+          </div>
         </div>
         <div class="set-strip">${sets}</div>
         <div class="exercise-controls">
           <input type="number" id="reps-${ex.key}" min="0" max="20" step="1" value="${ex.repsTarget}" ${complete ? 'disabled' : ''}>
           <button class="set-complete" onclick="logExerciseSet('${ex.key}')" ${complete ? 'disabled' : ''}>Log set</button>
-          <button class="set-fail" onclick="logExerciseSet('${ex.key}', true)" ${complete ? 'disabled' : ''}>Missed reps</button>
+          <button class="set-fail" onclick="logExerciseSet('${ex.key}', true)" ${complete ? 'disabled' : ''}>Missed</button>
         </div>
       </div>`;
   }).join('');
@@ -1643,6 +1902,7 @@ function bindAutosave() {
   renderProgress();
   renderNutrition();
   resetRestTimer();
+  syncWarmupBox();
   bindAutosave();
 })();
 </script>
