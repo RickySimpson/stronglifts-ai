@@ -180,6 +180,24 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 .status-repeat{background:var(--amber-dim);color:var(--amber);}
 .status-deload{background:#3a1f24;color:var(--red);}
 
+
+/* ── Phase 4 progress UI ─────────────────────────────────────── */
+.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
+.chip-btn{border:1px solid var(--border);background:var(--bg3);color:var(--muted);padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer;font-family:var(--font-body);}
+.chip-btn.active{background:var(--purple-dim);color:var(--purple);border-color:#3d3580;}
+.milestone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
+.milestone{background:var(--bg3);border-radius:8px;padding:10px;}
+.milestone-k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
+.milestone-v{font-family:var(--font-display);font-size:24px;line-height:1;}
+.milestone-note{font-size:12px;color:var(--muted);line-height:1.5;}
+.chart-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
+.chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-top:8px;}
+.history-detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
+.history-detail-row:last-child{border-bottom:none;}
+.history-detail-main{font-size:13px;}
+.history-detail-sub{font-size:12px;color:var(--muted);margin-top:2px;}
+.pr-pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:600;background:var(--green-dim);color:var(--green);margin-left:6px;}
+
 /* ── Toast ─────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
@@ -263,6 +281,18 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
       <div class="card">
         <div class="card-title">Weekly check-in</div>
         <div id="week-review"><p style="color:var(--muted);font-size:13px;">Log a few workouts and check-ins to unlock a weekly review.</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Milestones</div>
+        <div id="milestone-list"><p style="color:var(--muted);font-size:13px;">Complete a few sessions to unlock milestones.</p></div>
+      </div>
+
+      <div class="card">
+        <div class="card-title">Exercise history</div>
+        <div id="history-tabs" class="chip-row"></div>
+        <div id="history-chart"><p style="color:var(--muted);font-size:13px;">Log workouts to see lift trends.</p></div>
+        <div id="exercise-history-list"></div>
       </div>
 
       <div class="card">
@@ -433,6 +463,7 @@ const defaultState = {
 
 let state = JSON.parse(JSON.stringify(defaultState));
 let restTimer = { duration: 180, remaining: 180, interval: null, running: false };
+let selectedHistoryLift = 'squat';
 
 // ── PERSISTENCE ─────────────────────────────────────────────────────────────
 async function saveToCloud(partial = {}) {
@@ -554,16 +585,21 @@ function updateUnitLabels() {
   const unit = getUnit();
   const bwLabel = document.getElementById('bw-label');
   if (bwLabel) bwLabel.textContent = `Body weight (${unit})`;
+  const profileBwLabel = document.querySelector('#s-bw')?.closest('.form-group')?.querySelector('.form-label');
+  if (profileBwLabel) profileBwLabel.textContent = `Body weight (${unit})`;
   const startLabel = document.getElementById('starting-weights-title');
   if (startLabel) startLabel.textContent = `Starting weights (${unit})`;
-  const checkinBw = document.querySelector('label[for="c-bw"]');
   document.querySelectorAll('[data-weight-sub]').forEach(el => el.textContent = `best ${unit}`);
   const bwCheckinLabel = document.querySelector('#c-bw')?.closest('.form-group')?.querySelector('.form-label');
   if (bwCheckinLabel) bwCheckinLabel.textContent = `Body weight (${unit})`;
-  document.querySelectorAll('#sw-squat,#sw-bench,#sw-dead,#sw-ohp,#sw-row,#s-bw,#c-bw').forEach(input => {
+  document.querySelectorAll('#sw-squat,#sw-bench,#sw-dead,#sw-ohp,#sw-row').forEach(input => {
     input.step = unit === 'lbs' ? '5' : '2.5';
   });
+  document.querySelectorAll('#s-bw,#c-bw').forEach(input => {
+    input.step = unit === 'lbs' ? '1' : '0.5';
+  });
 }
+
 
 // ── NAVIGATION ───────────────────────────────────────────────────────────────
 function showSection(name) {
@@ -960,6 +996,135 @@ function resetRestTimer() {
   updateRestTimerDisplay();
 }
 
+
+// ── PHASE 4 HELPERS ─────────────────────────────────────────────────────────
+function liftLabel(key) {
+  return ({ squat:'Squat', bench:'Bench press', dead:'Deadlift', ohp:'Overhead press', row:'Barbell row' })[key] || key;
+}
+function getLiftHistory(key) {
+  return state.workouts.map(w => {
+    const result = (w.exerciseResults || []).find(r => r.key === key);
+    if (!result) return null;
+    return {
+      date: w.date,
+      workKg: result.workKg,
+      outcome: result.outcome,
+      note: result.note,
+      successfulSets: w.successfulSets || 0,
+      plannedSets: w.plannedSets || 0,
+    };
+  }).filter(Boolean);
+}
+function computePRCount() {
+  let count = 0;
+  ['squat','bench','row','ohp','dead'].forEach(key => {
+    let best = 0;
+    getLiftHistory(key).forEach(item => {
+      if (item.workKg > best + 0.0001) {
+        best = item.workKg;
+        count += 1;
+      }
+    });
+  });
+  return count;
+}
+function currentWorkoutStreak() {
+  const dates = state.workouts.map(w => new Date(w.date)).sort((a,b) => b-a);
+  if (!dates.length) return 0;
+  let streak = 1;
+  for (let i = 0; i < dates.length - 1; i++) {
+    const diffDays = Math.round((dates[i] - dates[i+1]) / 86400000);
+    if (diffDays <= 4) streak += 1;
+    else break;
+  }
+  return streak;
+}
+function completedWeeksCount() {
+  return Math.floor(state.workouts.length / Math.max(1, state.profile.days || 3));
+}
+function renderMilestones() {
+  const el = document.getElementById('milestone-list');
+  if (!el) return;
+  if (!state.workouts.length) {
+    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">Complete a few sessions to unlock milestones.</p>';
+    return;
+  }
+  const streak = currentWorkoutStreak();
+  const prs = computePRCount();
+  const weeks = completedWeeksCount();
+  const current = currentWeights();
+  const heaviest = Object.entries(current).sort((a,b)=>b[1]-a[1])[0];
+  el.innerHTML = `
+    <div class="milestone-grid">
+      <div class="milestone"><div class="milestone-k">Workout streak</div><div class="milestone-v">${streak}</div></div>
+      <div class="milestone"><div class="milestone-k">PRs logged</div><div class="milestone-v">${prs}</div></div>
+      <div class="milestone"><div class="milestone-k">Weeks built</div><div class="milestone-v">${weeks}</div></div>
+    </div>
+    <div class="milestone-note">Strongest current work set: ${liftLabel(heaviest[0])} at ${formatWeight(heaviest[1])}. ${prs >= 5 ? 'Momentum is visible now.' : 'Early momentum is building.'}</div>`;
+}
+function buildMiniChart(history) {
+  if (!history.length) return '<p style="color:var(--muted);font-size:13px;">Log workouts to see lift trends.</p>';
+  const values = history.map(h => kgToUnit(h.workKg));
+  const min = Math.min(...values);
+  const max = Math.max(...values);
+  const w = 280, h = 90, pad = 12;
+  const pts = values.map((v, i) => {
+    const x = pad + (i * ((w - pad * 2) / Math.max(1, values.length - 1)));
+    const y = h - pad - ((v - min) / Math.max(1, max - min || 1)) * (h - pad * 2);
+    return `${x},${y}`;
+  }).join(' ');
+  const last = history[history.length - 1];
+  const first = history[0];
+  const delta = kgToUnit(last.workKg - first.workKg);
+  return `
+    <div class="chart-box">
+      <svg viewBox="0 0 ${w} ${h}" width="100%" height="90" aria-label="Lift trend">
+        <polyline fill="none" stroke="#7c6ef5" stroke-width="3" points="${pts}" />
+        ${values.map((v, i) => {
+          const x = pad + (i * ((w - pad * 2) / Math.max(1, values.length - 1)));
+          const y = h - pad - ((v - min) / Math.max(1, max - min || 1)) * (h - pad * 2);
+          return `<circle cx="${x}" cy="${y}" r="3.5" fill="#f0ede8" />`;
+        }).join('')}
+      </svg>
+      <div class="chart-meta"><span>Start ${formatWeight(first.workKg)}</span><span>Now ${formatWeight(last.workKg)}</span><span>${delta >= 0 ? '+' : ''}${delta.toFixed(getUnit()==='lbs'?0:1)} ${getUnit()}</span></div>
+    </div>`;
+}
+function renderExerciseHistory() {
+  const tabs = document.getElementById('history-tabs');
+  const chart = document.getElementById('history-chart');
+  const list = document.getElementById('exercise-history-list');
+  if (!tabs || !chart || !list) return;
+  const keys = ['squat','bench','row','ohp','dead'];
+  tabs.innerHTML = keys.map(key => `<button class="chip-btn ${selectedHistoryLift===key?'active':''}" onclick="selectHistoryLift('${key}')">${liftLabel(key)}</button>`).join('');
+  const history = getLiftHistory(selectedHistoryLift);
+  chart.innerHTML = buildMiniChart(history);
+  if (!history.length) {
+    list.innerHTML = '';
+    return;
+  }
+  const prDates = new Set();
+  let runningBest = 0;
+  history.forEach(item => {
+    if (item.workKg > runningBest + 0.0001) {
+      runningBest = item.workKg;
+      prDates.add(item.date);
+    }
+  });
+  const recent = history.slice(-8).reverse();
+  list.innerHTML = recent.map(item => {
+    const isPR = prDates.has(item.date);
+    const ds = new Date(item.date).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    return `<div class="history-detail-row">
+      <div class="history-detail-main">${formatWeight(item.workKg)} ${isPR ? '<span class="pr-pill">PR</span>' : ''}<div class="history-detail-sub">${ds} · ${item.note || item.outcome}</div></div>
+      <div class="history-detail-sub">${item.outcome}</div>
+    </div>`;
+  }).join('');
+}
+function selectHistoryLift(key) {
+  selectedHistoryLift = key;
+  renderExerciseHistory();
+}
+
 // ── PROGRESS ─────────────────────────────────────────────────────────────────
 function renderProgress() {
   const count = state.workouts.length;
@@ -1004,6 +1169,9 @@ function renderProgress() {
     </div>
     <div class="review-note">${weeklyReviewText(stats)}</div>
   ` : '<p style="color:var(--muted);font-size:13px;">Log a few workouts and check-ins to unlock a weekly review.</p>';
+
+  renderMilestones();
+  renderExerciseHistory();
 
   const hist = state.workouts.slice(-10).reverse();
   document.getElementById('history-list').innerHTML = hist.length
