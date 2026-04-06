@@ -94,11 +94,28 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 .btn-primary{background:var(--purple);border-color:var(--purple);color:#fff;justify-content:center;font-weight:500;}
 .btn-primary:hover{background:#6a5ee8;}
 
-/* ── Log set input ─────────────────────────────────────────────── */
-.set-logger{display:grid;grid-template-columns:1fr 1fr auto;gap:8px;margin-top:12px;}
-.set-logger input{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:var(--font-body);font-size:15px;width:100%;}
-.set-logger input::placeholder{color:var(--hint);}
-.log-btn{background:var(--purple);border:none;border-radius:8px;color:#fff;font-size:20px;padding:0 16px;cursor:pointer;}
+/* ── Planned sets ─────────────────────────────────────────────── */
+.session-tools{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;}
+.rest-timer{flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
+.rest-timer strong{font-family:var(--font-display);font-size:24px;line-height:1;}
+.mini-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;cursor:pointer;font-family:var(--font-body);}
+.mini-btn:hover{background:#2a2a2a;}
+.mini-btn.primary{background:var(--purple);border-color:var(--purple);color:#fff;}
+.set-plan{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
+.set-card{border:1px solid var(--border);border-radius:10px;background:var(--bg3);padding:12px;}
+.set-card.done{border-color:var(--green);background:rgba(62,207,142,.08);}
+.set-card.failed{border-color:var(--amber);background:rgba(245,166,35,.08);}
+.set-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
+.set-title{font-weight:600;font-size:14px;}
+.set-meta{font-size:12px;color:var(--muted);margin-top:2px;}
+.set-status{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--bg2);color:var(--muted);border:1px solid var(--border);}
+.set-status.done{background:var(--green-dim);color:var(--green);border-color:transparent;}
+.set-status.failed{background:var(--amber-dim);color:var(--amber);border-color:transparent;}
+.set-controls{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px;align-items:center;}
+.set-controls input{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:var(--font-body);font-size:14px;width:100%;}
+.set-controls button{border:none;border-radius:8px;padding:10px 12px;cursor:pointer;font-family:var(--font-body);font-size:13px;}
+.set-complete{background:var(--purple);color:#fff;}
+.set-fail{background:var(--bg2);color:var(--amber);border:1px solid var(--amber);}
 
 /* ── Week dots ─────────────────────────────────────────────────── */
 .week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;}
@@ -180,11 +197,12 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
       <div class="card" id="workout-card">
         <div class="card-title" id="workout-title">Workout A</div>
         <div id="exercise-list"></div>
-        <div class="set-logger">
-          <input type="number" id="log-weight" placeholder="kg" min="0" step="2.5">
-          <input type="number" id="log-reps" placeholder="reps" min="1" max="20">
-          <button class="log-btn" onclick="logSet()" title="Log set">+</button>
+        <div class="session-tools">
+          <div class="rest-timer"><span>Rest timer</span><strong id="rest-timer-display">03:00</strong></div>
+          <button class="mini-btn" onclick="toggleRestTimer()" id="rest-timer-btn">Start</button>
+          <button class="mini-btn" onclick="resetRestTimer()">Reset</button>
         </div>
+        <div id="set-plan" class="set-plan"></div>
         <div id="log-history" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
         <div class="ai-box" id="today-ai-box">
           <div class="ai-box-label">AI Coach</div>
@@ -200,8 +218,8 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
     <div id="sec-progress" class="section">
       <div class="metrics">
         <div class="metric"><div class="metric-label">Workouts</div><div class="metric-value" id="p-total">0</div><div class="metric-sub">all time</div></div>
-        <div class="metric"><div class="metric-label">Squat</div><div class="metric-value" id="p-squat">—</div><div class="metric-sub">best kg</div></div>
-        <div class="metric"><div class="metric-label">Deadlift</div><div class="metric-value" id="p-dead">—</div><div class="metric-sub">best kg</div></div>
+        <div class="metric"><div class="metric-label">Squat</div><div class="metric-value" id="p-squat">—</div><div class="metric-sub" data-weight-sub>best kg</div></div>
+        <div class="metric"><div class="metric-label">Deadlift</div><div class="metric-value" id="p-dead">—</div><div class="metric-sub" data-weight-sub>best kg</div></div>
       </div>
 
       <div class="card">
@@ -261,7 +279,7 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
         <div class="card-title">Your profile</div>
         <div class="form-row">
           <div class="form-group">
-            <label class="form-label">Body weight (kg)</label>
+            <label class="form-label" id="bw-label">Body weight (kg)</label>
             <input type="number" id="s-bw" value="85" min="40" max="200">
           </div>
           <div class="form-group">
@@ -279,6 +297,13 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
             <select id="s-age"><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option></select>
           </div>
         </div>
+        <div class="form-group">
+          <label class="form-label">Units</label>
+          <select id="s-units">
+            <option value="kg">KG</option>
+            <option value="lbs">LBS</option>
+          </select>
+        </div>
         <button class="btn btn-primary" onclick="saveSettings()">Save profile</button>
       </div>
 
@@ -291,7 +316,7 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
       </div>
 
       <div class="card">
-        <div class="card-title">Starting weights (kg)</div>
+        <div class="card-title" id="starting-weights-title">Starting weights (kg)</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Squat</label><input type="number" id="sw-squat" placeholder="e.g. 60" step="2.5"></div>
           <div class="form-group"><label class="form-label">Bench press</label><input type="number" id="sw-bench" placeholder="e.g. 40" step="2.5"></div>
@@ -336,16 +361,35 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 <script>
 // ── CONFIG ──────────────────────────────────────────────────────────────────
 const API = 'https://stronglifts-api.stronglifts-api.workers.dev';
-const USER_KEY = 'user_1'; // single-user for now; extend with auth later
-
-// ── STATE ───────────────────────────────────────────────────────────────────
-let state = {
+const KG_TO_LB = 2.20462;
+const LB_TO_KG = 1 / KG_TO_LB;
+const DEFAULTS = {
   profile: { bw: 85, days: 3, goal: 'Recomposition', age: 'Intermediate' },
   weights: { squat: 60, bench: 40, dead: 80, ohp: 30, row: 40 },
-  workouts: [],       // array of { date, type:'A'|'B', sets:[{ex,kg,reps}] }
-  currentSets: [],    // sets logged in current session
-  settings: { adapt: true, deload: true, cycling: true, mealplan: true },
+  workouts: [],
+  currentSets: [],
+  settings: { adapt: true, deload: true, cycling: true, mealplan: true, units: 'kg' },
 };
+
+function resolveUserKey() {
+  const params = new URLSearchParams(window.location.search);
+  const fromQuery = params.get('uid');
+  if (fromQuery) {
+    localStorage.setItem('sl_user_key', fromQuery);
+    return fromQuery;
+  }
+  const cached = localStorage.getItem('sl_user_key');
+  if (cached) return cached;
+  const generated = `user_${Math.random().toString(36).slice(2, 10)}`;
+  localStorage.setItem('sl_user_key', generated);
+  return generated;
+}
+
+const USER_KEY = resolveUserKey();
+
+// ── STATE ───────────────────────────────────────────────────────────────────
+let state = JSON.parse(JSON.stringify(DEFAULTS));
+let restTimer = { duration: 180, remaining: 180, interval: null, running: false };
 
 // ── PERSISTENCE ─────────────────────────────────────────────────────────────
 async function saveToCloud(partial = {}) {
@@ -362,7 +406,6 @@ async function saveToCloud(partial = {}) {
     localStorage.setItem('sl_cache', JSON.stringify(payload));
   } catch (e) {
     setSyncState('err');
-    // Fallback: save locally
     localStorage.setItem('sl_cache', JSON.stringify({ ...state, updatedAt: Date.now() }));
     showToast('Saved locally (offline mode)');
   }
@@ -374,19 +417,30 @@ async function loadFromCloud() {
     const r = await fetch(`${API}/data/${USER_KEY}`);
     if (r.ok) {
       const { data } = await r.json();
-      state = { ...state, ...data };
+      state = mergeState(data);
       localStorage.setItem('sl_cache', JSON.stringify(state));
       setSyncState('ok');
     } else if (r.status === 404) {
-      // First time — no data yet
       setSyncState('ok');
     } else throw new Error(r.status);
   } catch (e) {
-    // Try local cache
     const cached = localStorage.getItem('sl_cache');
-    if (cached) { state = { ...state, ...JSON.parse(cached) }; showToast('Offline — using cached data'); }
+    if (cached) {
+      state = mergeState(JSON.parse(cached));
+      showToast('Offline — using cached data');
+    }
     setSyncState('err');
   }
+}
+
+function mergeState(data = {}) {
+  return {
+    profile: { ...DEFAULTS.profile, ...(data.profile || {}) },
+    weights: { ...DEFAULTS.weights, ...(data.weights || {}) },
+    workouts: Array.isArray(data.workouts) ? data.workouts : [],
+    currentSets: Array.isArray(data.currentSets) ? data.currentSets : [],
+    settings: { ...DEFAULTS.settings, ...(data.settings || {}) },
+  };
 }
 
 function setSyncState(s) {
@@ -394,6 +448,55 @@ function setSyncState(s) {
   const lbl = document.getElementById('sync-label');
   dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : s === 'err' ? ' err' : '');
   lbl.textContent = s === 'syncing' ? 'saving...' : s === 'err' ? 'offline' : 'saved';
+}
+
+// ── UNITS ───────────────────────────────────────────────────────────────────
+function getUnit() {
+  return state.settings?.units === 'lbs' ? 'lbs' : 'kg';
+}
+function displayDigits() {
+  return getUnit() === 'lbs' ? 0 : 1;
+}
+function roundToStep(value, step) {
+  return Math.round(value / step) * step;
+}
+function getIncrementKg(key) {
+  if (getUnit() === 'lbs') return ['squat', 'dead'].includes(key) ? 10 * LB_TO_KG : 5 * LB_TO_KG;
+  return ['squat', 'dead'].includes(key) ? 5 : 2.5;
+}
+function kgToUnit(kg) {
+  return getUnit() === 'lbs' ? kg * KG_TO_LB : kg;
+}
+function unitToKg(val) {
+  return getUnit() === 'lbs' ? val * LB_TO_KG : val;
+}
+function normalizeDisplayInput(value) {
+  const step = getUnit() === 'lbs' ? 5 : 2.5;
+  const raw = getUnit() === 'lbs' ? Number(value) : Number(value);
+  return roundToStep(raw, step);
+}
+function formatWeight(kg, digits = displayDigits()) {
+  if (kg == null || Number.isNaN(kg)) return '—';
+  const val = kgToUnit(kg);
+  const rounded = digits === 0 ? Math.round(val) : Math.round(val * 10) / 10;
+  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(digits)} ${getUnit()}`;
+}
+function formatWeightValue(kg, digits = displayDigits()) {
+  if (kg == null || Number.isNaN(kg)) return '';
+  const val = kgToUnit(kg);
+  const rounded = digits === 0 ? Math.round(val) : Math.round(val * 10) / 10;
+  return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(digits);
+}
+function updateUnitLabels() {
+  const unit = getUnit();
+  const bwLabel = document.getElementById('bw-label');
+  if (bwLabel) bwLabel.textContent = `Body weight (${unit})`;
+  const startLabel = document.getElementById('starting-weights-title');
+  if (startLabel) startLabel.textContent = `Starting weights (${unit})`;
+  document.querySelectorAll('[data-weight-sub]').forEach(el => el.textContent = `best ${unit}`);
+  document.querySelectorAll('#sw-squat,#sw-bench,#sw-dead,#sw-ohp,#sw-row,#s-bw').forEach(input => {
+    input.step = unit === 'lbs' ? '5' : '2.5';
+  });
 }
 
 // ── NAVIGATION ───────────────────────────────────────────────────────────────
@@ -406,40 +509,63 @@ function showSection(name) {
   if (name === 'nutrition') renderNutrition();
 }
 
-// ── WORKOUT LOGIC ─────────────────────────────────────────────────────────────
+// ── WORKOUT LOGIC ────────────────────────────────────────────────────────────
 const WORKOUT_A = [
-  { key: 'squat',  name: 'Squat',        sets: '5×5' },
-  { key: 'bench',  name: 'Bench press',  sets: '5×5' },
-  { key: 'row',    name: 'Barbell row',  sets: '5×5' },
+  { key: 'squat',  name: 'Squat', setsTarget: 5, repsTarget: 5, label: '5×5' },
+  { key: 'bench',  name: 'Bench press', setsTarget: 5, repsTarget: 5, label: '5×5' },
+  { key: 'row',    name: 'Barbell row', setsTarget: 5, repsTarget: 5, label: '5×5' },
 ];
 const WORKOUT_B = [
-  { key: 'squat',  name: 'Squat',        sets: '5×5' },
-  { key: 'ohp',    name: 'Overhead press', sets: '5×5' },
-  { key: 'dead',   name: 'Deadlift',     sets: '1×5' },
+  { key: 'squat',  name: 'Squat', setsTarget: 5, repsTarget: 5, label: '5×5' },
+  { key: 'ohp',    name: 'Overhead press', setsTarget: 5, repsTarget: 5, label: '5×5' },
+  { key: 'dead',   name: 'Deadlift', setsTarget: 1, repsTarget: 5, label: '1×5' },
 ];
 
 function currentWorkoutType() {
-  const count = state.workouts.length;
-  return count % 2 === 0 ? 'A' : 'B';
+  return state.workouts.length % 2 === 0 ? 'A' : 'B';
 }
-
+function getWorkoutPlan(type = currentWorkoutType()) {
+  return type === 'A' ? WORKOUT_A : WORKOUT_B;
+}
 function currentWeights() {
-  // Progress 2.5kg per session for upper body, 5kg for squat/deadlift
   const base = state.weights;
-  const sessions = state.workouts.length;
+  const completed = state.workouts.length;
   return {
-    squat: base.squat + sessions * 5,
-    bench: base.bench + sessions * 2.5,
-    row:   base.row   + sessions * 2.5,
-    ohp:   base.ohp   + sessions * 2.5,
-    dead:  base.dead  + sessions * 5,
+    squat: base.squat + completed * getIncrementKg('squat'),
+    bench: base.bench + completed * getIncrementKg('bench'),
+    row:   base.row   + completed * getIncrementKg('row'),
+    ohp:   base.ohp   + completed * getIncrementKg('ohp'),
+    dead:  base.dead  + completed * getIncrementKg('dead'),
   };
 }
-
+function buildPlannedSets() {
+  const weights = currentWeights();
+  const plan = [];
+  getWorkoutPlan().forEach(ex => {
+    for (let i = 1; i <= ex.setsTarget; i++) {
+      plan.push({
+        id: `${ex.key}-${i}`,
+        key: ex.key,
+        ex: ex.name,
+        setNumber: i,
+        totalSets: ex.setsTarget,
+        repsTarget: ex.repsTarget,
+        plannedKg: weights[ex.key],
+      });
+    }
+  });
+  return plan;
+}
+function getLoggedSetById(id) {
+  return state.currentSets.find(s => s.id === id);
+}
+function getLoggedCount() {
+  return state.currentSets.length;
+}
 function renderToday() {
   const type = currentWorkoutType();
   const wts = currentWeights();
-  const exercises = type === 'A' ? WORKOUT_A : WORKOUT_B;
+  const exercises = getWorkoutPlan(type);
   const week = Math.floor(state.workouts.length / 3) + 1;
   const streak = state.workouts.length;
 
@@ -448,10 +574,9 @@ function renderToday() {
   document.getElementById('m-streak').textContent = streak;
   document.getElementById('workout-title').textContent = `Workout ${type}`;
 
-  // Week dots
   const days = ['M','T','W','T','F','S','S'];
-  const today = new Date().getDay(); // 0=Sun
-  const dotMap = [1,2,3,4,5,6,0]; // Mon=0..Sun=6
+  const today = new Date().getDay();
+  const dotMap = [1,2,3,4,5,6,0];
   const todayIdx = dotMap.indexOf(today);
   document.getElementById('week-dots').innerHTML = days.map((d, i) => {
     let cls = 'dot-future';
@@ -460,56 +585,104 @@ function renderToday() {
     return `<div><div class="wday-name">${d}</div><div class="wday-dot ${cls}">${cls === 'dot-done' ? (i%4===0?'A':'B') : '—'}</div></div>`;
   }).join('');
 
-  // Exercise list
   document.getElementById('exercise-list').innerHTML = exercises.map(ex => `
     <div class="ex-row">
       <div>
         <div class="ex-name">${ex.name}</div>
-        <div class="ex-detail">${ex.sets}</div>
+        <div class="ex-detail">${ex.label}</div>
       </div>
       <div style="text-align:right;">
-        <div class="ex-weight">${wts[ex.key]} kg</div>
-        <div class="ex-sets">auto-progressed</div>
+        <div class="ex-weight">${formatWeight(wts[ex.key])}</div>
+        <div class="ex-sets">planned working weight</div>
       </div>
     </div>
   `).join('');
 
-  // Session log
+  renderPlannedSets();
   renderSessionLog();
 
-  // AI insight
   const insights = [
-    `Workout ${type} — focus on hitting depth on every squat rep before worrying about weight. You're progressing well.`,
-    `Keep rest periods 3–5 minutes between heavy sets. Rushing rest is the #1 reason for stalled progression.`,
-    `Week ${week}: you're in the sweet spot of beginner gains. Consistency beats everything right now.`,
-    `Make sure you're eating enough protein today — ${Math.round(state.profile.bw * 2.2)}g minimum to support muscle growth.`,
+    `Workout ${type}: hit every planned set before adding weight next time. Quality reps first.`,
+    `Rest 3–5 minutes between heavy sets. Use the timer so your later sets don't fall apart.`,
+    `Week ${week}: keep the session clean and consistent. Small jumps add up fast on 5×5.`,
+    `Protein target today: ${Math.round(state.profile.bw * 2.2)}g. Recovery drives progression.`
   ];
   document.getElementById('today-ai-text').textContent = insights[state.workouts.length % insights.length];
+}
+
+function renderPlannedSets() {
+  const plan = buildPlannedSets();
+  const unitStep = getUnit() === 'lbs' ? '5' : '2.5';
+  const html = plan.map(item => {
+    const logged = getLoggedSetById(item.id);
+    const statusClass = logged ? (logged.completed ? 'done' : 'failed') : '';
+    const statusText = logged ? (logged.completed ? `Done · ${logged.reps}/${item.repsTarget}` : `Failed · ${logged.reps}/${item.repsTarget}`) : 'Planned';
+    const displayedWeight = logged ? formatWeightValue(logged.kg) : formatWeightValue(item.plannedKg);
+    return `
+      <div class="set-card ${statusClass}">
+        <div class="set-top">
+          <div>
+            <div class="set-title">${item.ex} · Set ${item.setNumber}/${item.totalSets}</div>
+            <div class="set-meta">Target: ${formatWeight(item.plannedKg)} × ${item.repsTarget}</div>
+          </div>
+          <div class="set-status ${statusClass}">${statusText}</div>
+        </div>
+        <div class="set-controls">
+          <input type="number" id="reps-${item.id}" min="0" max="20" step="1" value="${logged ? logged.reps : item.repsTarget}" ${logged ? 'disabled' : ''}>
+          <button class="set-complete" onclick="logPlannedSet('${item.id}')" ${logged ? 'disabled' : ''}>Complete</button>
+          <button class="set-fail" onclick="logPlannedSet('${item.id}', true)" ${logged ? 'disabled' : ''}>Fail</button>
+        </div>
+      </div>`;
+  }).join('');
+  document.getElementById('set-plan').innerHTML = html;
 }
 
 function renderSessionLog() {
   const el = document.getElementById('log-history');
   if (!state.currentSets.length) { el.textContent = ''; return; }
-  el.innerHTML = state.currentSets.slice(-5).map(s =>
-    `<span style="margin-right:12px;">✓ ${s.ex}: ${s.kg}kg × ${s.reps}</span>`
+  el.innerHTML = state.currentSets.slice(-6).map(s =>
+    `<span style="margin-right:12px;">${s.completed ? '✓' : '!' } ${s.ex}: ${formatWeight(s.kg)} × ${s.reps}</span>`
   ).join('');
 }
 
-function logSet() {
-  const kg = parseFloat(document.getElementById('log-weight').value);
-  const reps = parseInt(document.getElementById('log-reps').value);
-  if (!kg || !reps) { showToast('Enter weight and reps'); return; }
-  const type = currentWorkoutType();
-  const exercises = type === 'A' ? WORKOUT_A : WORKOUT_B;
-  const ex = exercises[state.currentSets.length % exercises.length].name;
-  state.currentSets.push({ ex, kg, reps });
+function logPlannedSet(id, failed = false) {
+  const planItem = buildPlannedSets().find(set => set.id === id);
+  if (!planItem) return;
+  if (getLoggedSetById(id)) {
+    showToast('That set is already logged');
+    return;
+  }
+  const repsInput = document.getElementById(`reps-${id}`);
+  const reps = Math.max(0, parseInt(repsInput?.value, 10) || 0);
+  const loggedSet = {
+    id,
+    key: planItem.key,
+    ex: planItem.ex,
+    kg: planItem.plannedKg,
+    reps,
+    targetReps: planItem.repsTarget,
+    completed: !failed && reps >= planItem.repsTarget,
+    date: new Date().toISOString(),
+  };
+  state.currentSets.push(loggedSet);
+  renderPlannedSets();
   renderSessionLog();
-  document.getElementById('log-weight').value = '';
-  document.getElementById('log-reps').value = '';
-  showToast(`Logged: ${ex} ${kg}kg × ${reps}`);
+  startRestTimer();
+  showToast(`${loggedSet.completed ? 'Logged' : 'Marked failed'}: ${planItem.ex} ${formatWeight(planItem.plannedKg)} × ${reps}`);
 }
 
 function completeWorkout() {
+  if (!state.currentSets.length) {
+    showToast('Log at least one set before completing');
+    return;
+  }
+  const plan = buildPlannedSets();
+  const doneCount = state.currentSets.length;
+  if (doneCount < plan.length) {
+    const proceed = confirm(`Only ${doneCount}/${plan.length} sets are logged. Complete workout anyway?`);
+    if (!proceed) return;
+  }
+  const successfulSets = state.currentSets.filter(s => s.completed).length;
   const type = currentWorkoutType();
   const wts = currentWeights();
   state.workouts.push({
@@ -517,39 +690,84 @@ function completeWorkout() {
     type,
     weights: { ...wts },
     sets: [...state.currentSets],
+    successfulSets,
+    plannedSets: plan.length,
   });
   state.currentSets = [];
+  stopRestTimer();
+  resetRestTimer();
   saveToCloud();
   renderToday();
-  showToast('Workout complete! 💪');
+  renderProgress();
+  showToast(`Workout complete! ${successfulSets}/${plan.length} good sets logged`);
 }
 
-// ── PROGRESS ──────────────────────────────────────────────────────────────────
+// ── REST TIMER ───────────────────────────────────────────────────────────────
+function updateRestTimerDisplay() {
+  const mins = String(Math.floor(restTimer.remaining / 60)).padStart(2, '0');
+  const secs = String(restTimer.remaining % 60).padStart(2, '0');
+  document.getElementById('rest-timer-display').textContent = `${mins}:${secs}`;
+  document.getElementById('rest-timer-btn').textContent = restTimer.running ? 'Pause' : 'Start';
+}
+function stopRestTimer() {
+  if (restTimer.interval) clearInterval(restTimer.interval);
+  restTimer.interval = null;
+  restTimer.running = false;
+  updateRestTimerDisplay();
+}
+function startRestTimer() {
+  stopRestTimer();
+  restTimer.running = true;
+  updateRestTimerDisplay();
+  restTimer.interval = setInterval(() => {
+    restTimer.remaining -= 1;
+    if (restTimer.remaining <= 0) {
+      stopRestTimer();
+      restTimer.remaining = 0;
+      updateRestTimerDisplay();
+      showToast('Rest complete — next set');
+      return;
+    }
+    updateRestTimerDisplay();
+  }, 1000);
+}
+function toggleRestTimer() {
+  if (restTimer.running) {
+    stopRestTimer();
+  } else {
+    if (restTimer.remaining <= 0) restTimer.remaining = restTimer.duration;
+    startRestTimer();
+  }
+}
+function resetRestTimer() {
+  stopRestTimer();
+  restTimer.remaining = restTimer.duration;
+  updateRestTimerDisplay();
+}
+
+// ── PROGRESS ─────────────────────────────────────────────────────────────────
 function renderProgress() {
   const wts = currentWeights();
   const count = state.workouts.length;
-
   document.getElementById('p-total').textContent = count;
-  document.getElementById('p-squat').textContent = wts.squat || '—';
-  document.getElementById('p-dead').textContent = wts.dead || '—';
+  document.getElementById('p-squat').textContent = formatWeightValue(wts.squat);
+  document.getElementById('p-dead').textContent = formatWeightValue(wts.dead);
 
-  // Lift bars
   const lifts = [
-    { name: 'Squat',         val: wts.squat, max: state.weights.squat + 200, color: '#7c6ef5' },
-    { name: 'Deadlift',      val: wts.dead,  max: state.weights.dead  + 250, color: '#3ecf8e' },
-    { name: 'Bench press',   val: wts.bench, max: state.weights.bench + 150, color: '#378ADD' },
-    { name: 'Barbell row',   val: wts.row,   max: state.weights.row   + 120, color: '#f5a623' },
-    { name: 'Overhead press',val: wts.ohp,   max: state.weights.ohp   + 100, color: '#f06060' },
+    { name: 'Squat', val: wts.squat, max: state.weights.squat + unitToKg(220), color: '#7c6ef5' },
+    { name: 'Deadlift', val: wts.dead, max: state.weights.dead + unitToKg(275), color: '#3ecf8e' },
+    { name: 'Bench press', val: wts.bench, max: state.weights.bench + unitToKg(165), color: '#378ADD' },
+    { name: 'Barbell row', val: wts.row, max: state.weights.row + unitToKg(135), color: '#f5a623' },
+    { name: 'Overhead press', val: wts.ohp, max: state.weights.ohp + unitToKg(110), color: '#f06060' },
   ];
   document.getElementById('lift-bars').innerHTML = lifts.map(l => {
     const pct = Math.min(100, Math.round((l.val / l.max) * 100));
     return `<div class="bar-wrap">
-      <div class="bar-label"><span>${l.name}</span><span>${l.val} kg</span></div>
+      <div class="bar-label"><span>${l.name}</span><span>${formatWeight(l.val)}</span></div>
       <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${l.color};"></div></div>
     </div>`;
   }).join('');
 
-  // History
   const hist = state.workouts.slice(-10).reverse();
   document.getElementById('history-list').innerHTML = hist.length
     ? hist.map(w => {
@@ -557,16 +775,15 @@ function renderProgress() {
         const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
         return `<div class="history-row">
           <div><div style="font-weight:500;">Workout ${w.type}</div><div class="history-date">${ds}</div></div>
-          <div style="text-align:right;font-size:13px;color:var(--muted);">${w.sets.length || 0} sets logged</div>
+          <div style="text-align:right;font-size:13px;color:var(--muted);">${w.successfulSets || 0}/${w.plannedSets || w.sets.length} good sets</div>
         </div>`;
       }).join('')
     : '<p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p>';
 }
 
-// ── NUTRITION ─────────────────────────────────────────────────────────────────
+// ── NUTRITION ────────────────────────────────────────────────────────────────
 function renderNutrition() {
-  const type = currentWorkoutType();
-  const isTraining = new Date().getDay() % 2 !== 0; // rough proxy
+  const isTraining = new Date().getDay() % 2 !== 0;
   const cals = isTraining ? 2340 : 1980;
   const carbs = isTraining ? 220 : 140;
   document.getElementById('n-cals').textContent = cals.toLocaleString();
@@ -574,76 +791,138 @@ function renderNutrition() {
   document.getElementById('n-day-type').textContent = isTraining ? 'training day' : 'rest day';
   document.getElementById('n-carb-note').textContent = isTraining ? 'higher today' : 'lower today';
   document.getElementById('nutrition-ai-text').textContent = isTraining
-    ? `Training day: eat most carbs around your workout window. Hit ${Math.round(state.profile.bw * 2.2)}g protein — non-negotiable for muscle retention.`
-    : `Rest day: calories drop to ${cals}, carbs cut back. Keep protein high. Great day for meal prep if Sunday.`;
+    ? `Training day: center carbs around your workout. Protein target: ${Math.round(state.profile.bw * 2.2)}g.`
+    : `Rest day: pull carbs back, keep protein high, and use the extra time for meal prep.`;
 }
 
-// ── SETTINGS ──────────────────────────────────────────────────────────────────
+// ── SETTINGS ─────────────────────────────────────────────────────────────────
 function populateSettings() {
-  document.getElementById('s-bw').value = state.profile.bw;
-  document.getElementById('sw-squat').value = state.weights.squat || '';
-  document.getElementById('sw-bench').value = state.weights.bench || '';
-  document.getElementById('sw-dead').value = state.weights.dead || '';
-  document.getElementById('sw-ohp').value = state.weights.ohp || '';
-  document.getElementById('sw-row').value = state.weights.row || '';
+  document.getElementById('s-bw').value = formatWeightValue(state.profile.bw);
+  document.getElementById('s-days').value = String(state.profile.days);
+  document.getElementById('s-goal').value = state.profile.goal;
+  document.getElementById('s-age').value = state.profile.age;
+  document.getElementById('sw-squat').value = formatWeightValue(state.weights.squat);
+  document.getElementById('sw-bench').value = formatWeightValue(state.weights.bench);
+  document.getElementById('sw-dead').value = formatWeightValue(state.weights.dead);
+  document.getElementById('sw-ohp').value = formatWeightValue(state.weights.ohp);
+  document.getElementById('sw-row').value = formatWeightValue(state.weights.row);
+  document.getElementById('s-units').value = getUnit();
   document.getElementById('t-adapt').checked = state.settings.adapt;
   document.getElementById('t-deload').checked = state.settings.deload;
   document.getElementById('t-cycling').checked = state.settings.cycling;
   document.getElementById('t-mealplan').checked = state.settings.mealplan;
 }
-
-function saveSettings() {
-  state.profile.bw = parseFloat(document.getElementById('s-bw').value) || 85;
-  state.settings.adapt   = document.getElementById('t-adapt').checked;
-  state.settings.deload  = document.getElementById('t-deload').checked;
+function captureProfileFromForm() {
+  const unit = document.getElementById('s-units').value;
+  state.settings.units = unit;
+  const bwInput = parseFloat(document.getElementById('s-bw').value);
+  state.profile.bw = Number.isFinite(bwInput) ? (unit === 'lbs' ? bwInput * LB_TO_KG : bwInput) : DEFAULTS.profile.bw;
+  state.profile.days = parseInt(document.getElementById('s-days').value, 10) || DEFAULTS.profile.days;
+  state.profile.goal = document.getElementById('s-goal').value;
+  state.profile.age = document.getElementById('s-age').value;
+  state.settings.adapt = document.getElementById('t-adapt').checked;
+  state.settings.deload = document.getElementById('t-deload').checked;
   state.settings.cycling = document.getElementById('t-cycling').checked;
-  state.settings.mealplan= document.getElementById('t-mealplan').checked;
+  state.settings.mealplan = document.getElementById('t-mealplan').checked;
+}
+function captureWeightsFromForm() {
+  const unit = document.getElementById('s-units').value;
+  state.settings.units = unit;
+  const toKg = (val, fallback) => Number.isFinite(val) ? (unit === 'lbs' ? val * LB_TO_KG : val) : fallback;
+  state.weights.squat = toKg(parseFloat(document.getElementById('sw-squat').value), DEFAULTS.weights.squat);
+  state.weights.bench = toKg(parseFloat(document.getElementById('sw-bench').value), DEFAULTS.weights.bench);
+  state.weights.dead = toKg(parseFloat(document.getElementById('sw-dead').value), DEFAULTS.weights.dead);
+  state.weights.ohp = toKg(parseFloat(document.getElementById('sw-ohp').value), DEFAULTS.weights.ohp);
+  state.weights.row = toKg(parseFloat(document.getElementById('sw-row').value), DEFAULTS.weights.row);
+}
+function saveSettings() {
+  captureProfileFromForm();
+  updateUnitLabels();
+  populateSettings();
+  renderToday();
+  renderNutrition();
+  renderProgress();
   saveToCloud();
   showToast('Profile saved ✓');
 }
-
 function saveWeights() {
-  state.weights.squat = parseFloat(document.getElementById('sw-squat').value) || 60;
-  state.weights.bench = parseFloat(document.getElementById('sw-bench').value) || 40;
-  state.weights.dead  = parseFloat(document.getElementById('sw-dead').value)  || 80;
-  state.weights.ohp   = parseFloat(document.getElementById('sw-ohp').value)   || 30;
-  state.weights.row   = parseFloat(document.getElementById('sw-row').value)   || 40;
-  saveToCloud();
+  captureWeightsFromForm();
+  updateUnitLabels();
+  populateSettings();
   renderToday();
+  renderProgress();
+  saveToCloud();
   showToast('Starting weights saved ✓');
+}
+function autosaveProfile() {
+  captureProfileFromForm();
+  updateUnitLabels();
+  populateSettings();
+  renderToday();
+  renderNutrition();
+  renderProgress();
+  saveToCloud();
+}
+function autosaveWeights() {
+  captureWeightsFromForm();
+  updateUnitLabels();
+  populateSettings();
+  renderToday();
+  renderProgress();
+  saveToCloud();
 }
 
 function exportData() {
   const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
   const url = URL.createObjectURL(blob);
   const a = document.createElement('a');
-  a.href = url; a.download = 'stronglifts-data.json'; a.click();
+  a.href = url;
+  a.download = 'stronglifts-data.json';
+  a.click();
 }
-
 function confirmReset() {
   if (confirm('Reset ALL data? This cannot be undone.')) {
-    state = { profile:{bw:85,days:3,goal:'Recomposition',age:'Intermediate'}, weights:{squat:60,bench:40,dead:80,ohp:30,row:40}, workouts:[], currentSets:[], settings:{adapt:true,deload:true,cycling:true,mealplan:true} };
+    state = JSON.parse(JSON.stringify(DEFAULTS));
+    stopRestTimer();
+    resetRestTimer();
     saveToCloud();
-    renderToday();
+    updateUnitLabels();
     populateSettings();
+    renderToday();
+    renderNutrition();
+    renderProgress();
     showToast('Data reset');
   }
 }
 
-// ── UTILS ─────────────────────────────────────────────────────────────────────
+// ── UTILS ────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
   t.textContent = msg;
   t.classList.add('show');
   setTimeout(() => t.classList.remove('show'), 2500);
 }
+function bindAutosave() {
+  ['s-bw','s-days','s-goal','s-age','s-units','t-adapt','t-deload','t-cycling','t-mealplan'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', autosaveProfile);
+  });
+  ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].forEach(id => {
+    const el = document.getElementById(id);
+    el.addEventListener('change', autosaveWeights);
+  });
+}
 
-// ── INIT ──────────────────────────────────────────────────────────────────────
+// ── INIT ─────────────────────────────────────────────────────────────────────
 (async () => {
   await loadFromCloud();
+  updateUnitLabels();
+  populateSettings();
   renderToday();
   renderNutrition();
-  populateSettings();
+  renderProgress();
+  resetRestTimer();
+  bindAutosave();
 })();
 </script>
 </body>
