@@ -578,8 +578,8 @@ function roundWorkoutKg(kg, key) {
 }
 function sanitizeEnteredWeightKg(val, key, fallback) {
   if (!Number.isFinite(val)) return fallback;
-  const kg = getUnit() === 'lbs' ? roundToStep(val, ['squat', 'dead'].includes(key) ? 10 : 5) * LB_TO_KG : roundToStep(val, ['squat', 'dead'].includes(key) ? 5 : 2.5);
-  return Math.round(kg * 1000) / 1000;
+  if (getUnit() === 'lbs') return Math.round((roundToStep(val, 5) * LB_TO_KG) * 1000) / 1000;
+  return roundToStep(val, 2.5);
 }
 function updateUnitLabels() {
   const unit = getUnit();
@@ -592,11 +592,14 @@ function updateUnitLabels() {
   document.querySelectorAll('[data-weight-sub]').forEach(el => el.textContent = `best ${unit}`);
   const bwCheckinLabel = document.querySelector('#c-bw')?.closest('.form-group')?.querySelector('.form-label');
   if (bwCheckinLabel) bwCheckinLabel.textContent = `Body weight (${unit})`;
-  document.querySelectorAll('#sw-squat,#sw-bench,#sw-dead,#sw-ohp,#sw-row').forEach(input => {
-    input.step = unit === 'lbs' ? '5' : '2.5';
+  const bwStep = unit === 'lbs' ? '1' : '0.5';
+  ['s-bw','c-bw'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.step = bwStep;
   });
-  document.querySelectorAll('#s-bw,#c-bw').forEach(input => {
-    input.step = unit === 'lbs' ? '1' : '0.5';
+  ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].forEach(id => {
+    const input = document.getElementById(id);
+    if (input) input.step = unit === 'lbs' ? '5' : '2.5';
   });
 }
 
@@ -820,24 +823,34 @@ function renderToday() {
 }
 
 function renderPlannedSets() {
-  const plan = buildPlannedSets();
-  const html = plan.map(item => {
-    const logged = getLoggedSetById(item.id);
-    const statusClass = logged ? (logged.completed ? 'done' : 'failed') : '';
-    const statusText = logged ? (logged.completed ? `Done · ${logged.reps}/${item.repsTarget}` : `Failed · ${logged.reps}/${item.repsTarget}`) : 'Planned';
+  const workout = getWorkoutPlan();
+  const weights = currentWeights();
+  const html = workout.map(ex => {
+    const sets = Array.from({ length: ex.setsTarget }, (_, idx) => {
+      const id = `${ex.key}-${idx + 1}`;
+      const logged = getLoggedSetById(id);
+      const cls = logged ? (logged.completed ? 'done' : 'failed') : (idx === state.currentSets.filter(s => s.key === ex.key).length ? 'active' : 'pending');
+      const label = logged ? (logged.completed ? '✓' : '×') : String(idx + 1);
+      return `<div class="set-pill ${cls}">${label}</div>`;
+    }).join('');
+    const nextSet = state.currentSets.filter(s => s.key === ex.key).length + 1;
+    const complete = nextSet > ex.setsTarget;
+    const nextLabel = complete ? 'All sets logged' : `Next: set ${nextSet}/${ex.setsTarget} at ${formatWeight(weights[ex.key])} × ${ex.repsTarget}`;
     return `
-      <div class="set-card ${statusClass}">
-        <div class="set-top">
+      <div class="exercise-card">
+        <div class="exercise-top">
           <div>
-            <div class="set-title">${item.ex} · Set ${item.setNumber}/${item.totalSets}</div>
-            <div class="set-meta">Target: ${formatWeight(item.plannedKg)} × ${item.repsTarget}</div>
+            <div class="exercise-title">${ex.name}</div>
+            <div class="exercise-meta">${ex.label} · work sets at ${formatWeight(weights[ex.key])}</div>
+            <div class="exercise-next">${nextLabel}</div>
           </div>
-          <div class="set-status ${statusClass}">${statusText}</div>
+          <div>${getOutcomeBadge(state.progress[ex.key]?.lastOutcome || 'new')}</div>
         </div>
-        <div class="set-controls">
-          <input type="number" id="reps-${item.id}" min="0" max="20" step="1" value="${logged ? logged.reps : item.repsTarget}" ${logged ? 'disabled' : ''}>
-          <button class="set-complete" onclick="logPlannedSet('${item.id}')" ${logged ? 'disabled' : ''}>Complete</button>
-          <button class="set-fail" onclick="logPlannedSet('${item.id}', true)" ${logged ? 'disabled' : ''}>Fail</button>
+        <div class="set-strip">${sets}</div>
+        <div class="exercise-controls">
+          <input type="number" id="reps-${ex.key}" min="0" max="20" step="1" value="${ex.repsTarget}" ${complete ? 'disabled' : ''}>
+          <button class="set-complete" onclick="logExerciseSet('${ex.key}')" ${complete ? 'disabled' : ''}>Log set</button>
+          <button class="set-fail" onclick="logExerciseSet('${ex.key}', true)" ${complete ? 'disabled' : ''}>Missed reps</button>
         </div>
       </div>`;
   }).join('');
@@ -852,14 +865,26 @@ function renderSessionLog() {
   ).join('');
 }
 
-function logPlannedSet(id, failed = false) {
+function logExerciseSet(key, failed = false) {
+  const ex = getWorkoutPlan().find(item => item.key === key);
+  if (!ex) return;
+  const loggedCount = state.currentSets.filter(s => s.key === key).length;
+  if (loggedCount >= ex.setsTarget) {
+    showToast('All sets for that lift are already logged');
+    return;
+  }
+  const id = `${key}-${loggedCount + 1}`;
+  logPlannedSet(id, failed, `reps-${key}`);
+}
+
+function logPlannedSet(id, failed = false, inputId = null) {
   const planItem = buildPlannedSets().find(set => set.id === id);
   if (!planItem) return;
   if (getLoggedSetById(id)) {
     showToast('That set is already logged');
     return;
   }
-  const repsInput = document.getElementById(`reps-${id}`);
+  const repsInput = document.getElementById(inputId || `reps-${id}`);
   const reps = Math.max(0, parseInt(repsInput?.value, 10) || 0);
   const loggedSet = {
     id,
