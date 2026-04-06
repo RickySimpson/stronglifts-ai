@@ -545,6 +545,11 @@ function formatWeightValue(kg, digits = displayDigits()) {
 function roundWorkoutKg(kg, key) {
   return roundToStep(kg, getIncrementKg(key));
 }
+function sanitizeEnteredWeightKg(val, key, fallback) {
+  if (!Number.isFinite(val)) return fallback;
+  const kg = getUnit() === 'lbs' ? roundToStep(val, ['squat', 'dead'].includes(key) ? 10 : 5) * LB_TO_KG : roundToStep(val, ['squat', 'dead'].includes(key) ? 5 : 2.5);
+  return Math.round(kg * 1000) / 1000;
+}
 function updateUnitLabels() {
   const unit = getUnit();
   const bwLabel = document.getElementById('bw-label');
@@ -1114,15 +1119,16 @@ function captureProfileFromForm() {
 function captureWeightsFromForm() {
   const unit = document.getElementById('s-units').value;
   state.settings.units = unit;
-  const toKg = (val, fallback) => Number.isFinite(val) ? (unit === 'lbs' ? val * LB_TO_KG : val) : fallback;
-  state.weights.squat = toKg(parseFloat(document.getElementById('sw-squat').value), defaultState.weights.squat);
-  state.weights.bench = toKg(parseFloat(document.getElementById('sw-bench').value), defaultState.weights.bench);
-  state.weights.dead = toKg(parseFloat(document.getElementById('sw-dead').value), defaultState.weights.dead);
-  state.weights.ohp = toKg(parseFloat(document.getElementById('sw-ohp').value), defaultState.weights.ohp);
-  state.weights.row = toKg(parseFloat(document.getElementById('sw-row').value), defaultState.weights.row);
+  state.weights.squat = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-squat').value), 'squat', defaultState.weights.squat);
+  state.weights.bench = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-bench').value), 'bench', defaultState.weights.bench);
+  state.weights.dead = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-dead').value), 'dead', defaultState.weights.dead);
+  state.weights.ohp = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-ohp').value), 'ohp', defaultState.weights.ohp);
+  state.weights.row = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-row').value), 'row', defaultState.weights.row);
   Object.keys(state.weights).forEach(key => {
     state.progress[key].currentKg = state.weights[key];
     state.progress[key].failCount = 0;
+    state.progress[key].completedSessions = 0;
+    state.progress[key].deloads = 0;
     state.progress[key].lastOutcome = 'new';
   });
 }
