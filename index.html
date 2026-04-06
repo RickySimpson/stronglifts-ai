@@ -164,6 +164,17 @@ html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--f
 select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;}
 .form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
 
+/* ── Warmup / progression ─────────────────────────────────────── */
+.warmup-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;}
+.warmup-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
+.warmup-row:last-child{border-bottom:none;}
+.warmup-lift{font-weight:500;}
+.warmup-note{color:var(--muted);font-size:12px;}
+.status-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em;}
+.status-success{background:var(--green-dim);color:var(--green);}
+.status-repeat{background:var(--amber-dim);color:var(--amber);}
+.status-deload{background:#3a1f24;color:var(--red);}
+
 /* ── Toast ─────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
@@ -201,6 +212,10 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
           <div class="rest-timer"><span>Rest timer</span><strong id="rest-timer-display">03:00</strong></div>
           <button class="mini-btn" onclick="toggleRestTimer()" id="rest-timer-btn">Start</button>
           <button class="mini-btn" onclick="resetRestTimer()">Reset</button>
+        </div>
+        <div class="warmup-box">
+          <div class="ai-box-label">Warm-up sets</div>
+          <div id="warmup-list"></div>
         </div>
         <div id="set-plan" class="set-plan"></div>
         <div id="log-history" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
@@ -366,6 +381,13 @@ const LB_TO_KG = 1 / KG_TO_LB;
 const DEFAULTS = {
   profile: { bw: 85, days: 3, goal: 'Recomposition', age: 'Intermediate' },
   weights: { squat: 60, bench: 40, dead: 80, ohp: 30, row: 40 },
+  progress: {
+    squat: { currentKg: 60, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
+    bench: { currentKg: 40, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
+    dead: { currentKg: 80, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
+    ohp: { currentKg: 30, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
+    row: { currentKg: 40, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
+  },
   workouts: [],
   currentSets: [],
   settings: { adapt: true, deload: true, cycling: true, mealplan: true, units: 'kg' },
@@ -434,13 +456,29 @@ async function loadFromCloud() {
 }
 
 function mergeState(data = {}) {
-  return {
+  const merged = {
     profile: { ...DEFAULTS.profile, ...(data.profile || {}) },
     weights: { ...DEFAULTS.weights, ...(data.weights || {}) },
+    progress: {},
     workouts: Array.isArray(data.workouts) ? data.workouts : [],
     currentSets: Array.isArray(data.currentSets) ? data.currentSets : [],
     settings: { ...DEFAULTS.settings, ...(data.settings || {}) },
   };
+  Object.keys(DEFAULTS.progress).forEach(key => {
+    const seeded = data.progress?.[key] || {};
+    merged.progress[key] = { ...DEFAULTS.progress[key], ...seeded };
+    if (!Number.isFinite(merged.progress[key].currentKg)) {
+      merged.progress[key].currentKg = merged.weights[key];
+    }
+  });
+  return merged;
+}
+
+function seedProgressFromWeights() {
+  Object.keys(state.weights).forEach(key => {
+    if (!state.progress[key]) state.progress[key] = { ...DEFAULTS.progress[key] };
+    if (!Number.isFinite(state.progress[key].currentKg)) state.progress[key].currentKg = state.weights[key];
+  });
 }
 
 function setSyncState(s) {
@@ -470,11 +508,6 @@ function kgToUnit(kg) {
 function unitToKg(val) {
   return getUnit() === 'lbs' ? val * LB_TO_KG : val;
 }
-function normalizeDisplayInput(value) {
-  const step = getUnit() === 'lbs' ? 5 : 2.5;
-  const raw = getUnit() === 'lbs' ? Number(value) : Number(value);
-  return roundToStep(raw, step);
-}
 function formatWeight(kg, digits = displayDigits()) {
   if (kg == null || Number.isNaN(kg)) return '—';
   const val = kgToUnit(kg);
@@ -486,6 +519,9 @@ function formatWeightValue(kg, digits = displayDigits()) {
   const val = kgToUnit(kg);
   const rounded = digits === 0 ? Math.round(val) : Math.round(val * 10) / 10;
   return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(digits);
+}
+function roundWorkoutKg(kg, key) {
+  return roundToStep(kg, getIncrementKg(key));
 }
 function updateUnitLabels() {
   const unit = getUnit();
@@ -528,15 +564,8 @@ function getWorkoutPlan(type = currentWorkoutType()) {
   return type === 'A' ? WORKOUT_A : WORKOUT_B;
 }
 function currentWeights() {
-  const base = state.weights;
-  const completed = state.workouts.length;
-  return {
-    squat: base.squat + completed * getIncrementKg('squat'),
-    bench: base.bench + completed * getIncrementKg('bench'),
-    row:   base.row   + completed * getIncrementKg('row'),
-    ohp:   base.ohp   + completed * getIncrementKg('ohp'),
-    dead:  base.dead  + completed * getIncrementKg('dead'),
-  };
+  seedProgressFromWeights();
+  return Object.fromEntries(Object.keys(state.progress).map(key => [key, state.progress[key].currentKg]));
 }
 function buildPlannedSets() {
   const weights = currentWeights();
@@ -559,8 +588,53 @@ function buildPlannedSets() {
 function getLoggedSetById(id) {
   return state.currentSets.find(s => s.id === id);
 }
-function getLoggedCount() {
-  return state.currentSets.length;
+function getExerciseOutcome(key) {
+  const plan = getWorkoutPlan().find(ex => ex.key === key);
+  const sets = state.currentSets.filter(s => s.key === key);
+  const success = sets.length === plan.setsTarget && sets.every(s => s.completed && s.reps >= plan.repsTarget);
+  return { success, setsLogged: sets.length, setsTarget: plan.setsTarget, failedSets: sets.filter(s => !s.completed).length };
+}
+function getOutcomeBadge(outcome) {
+  if (outcome === 'success') return '<span class="status-chip status-success">Progressing</span>';
+  if (outcome === 'deload') return '<span class="status-chip status-deload">Deload next time</span>';
+  if (outcome === 'repeat') return '<span class="status-chip status-repeat">Repeat weight</span>';
+  return '<span class="status-chip status-success">Ready</span>';
+}
+function buildWarmupSets(exKey, workKg) {
+  const barKg = exKey === 'dead' ? 60 * LB_TO_KG : 20;
+  const warmups = [];
+  const add = (pct, reps, note='') => {
+    const raw = Math.max(barKg, roundWorkoutKg(workKg * pct, exKey));
+    if (!warmups.find(w => Math.abs(w.kg - raw) < 0.01)) warmups.push({ kg: raw, reps, note });
+  };
+  if (workKg <= barKg + getIncrementKg(exKey)) {
+    warmups.push({ kg: Math.max(barKg, roundWorkoutKg(workKg, exKey)), reps: exKey === 'dead' ? 5 : 8, note: '1 easy ramp set' });
+    return warmups;
+  }
+  add(0.4, 5, 'Groove the movement');
+  add(0.6, 5, 'Controlled tempo');
+  add(0.75, 3, 'Move with intent');
+  if (exKey !== 'dead') add(0.9, 1, 'Primer single');
+  return warmups.sort((a,b) => a.kg - b.kg);
+}
+function renderWarmups() {
+  const weights = currentWeights();
+  const html = getWorkoutPlan().map(ex => {
+    const warmups = buildWarmupSets(ex.key, weights[ex.key]);
+    const outcome = state.progress[ex.key]?.lastOutcome || 'new';
+    return `
+      <div style="margin-bottom:10px;">
+        <div class="warmup-row" style="padding-top:0;">
+          <div>
+            <div class="warmup-lift">${ex.name}</div>
+            <div class="warmup-note">Work sets at ${formatWeight(weights[ex.key])} · ${ex.label}</div>
+          </div>
+          <div>${getOutcomeBadge(outcome)}</div>
+        </div>
+        ${warmups.map(w => `<div class="warmup-row"><span>${formatWeight(w.kg)} × ${w.reps}</span><span class="warmup-note">${w.note}</span></div>`).join('')}
+      </div>`;
+  }).join('');
+  document.getElementById('warmup-list').innerHTML = html;
 }
 function renderToday() {
   const type = currentWorkoutType();
@@ -568,6 +642,8 @@ function renderToday() {
   const exercises = getWorkoutPlan(type);
   const week = Math.floor(state.workouts.length / 3) + 1;
   const streak = state.workouts.length;
+  const recent = state.workouts.slice(-3).flatMap(w => w.exerciseResults || []);
+  const recentFailures = recent.filter(r => r.outcome !== 'success').length;
 
   document.getElementById('m-week').textContent = 'W' + week;
   document.getElementById('m-workout').textContent = type;
@@ -585,39 +661,42 @@ function renderToday() {
     return `<div><div class="wday-name">${d}</div><div class="wday-dot ${cls}">${cls === 'dot-done' ? (i%4===0?'A':'B') : '—'}</div></div>`;
   }).join('');
 
-  document.getElementById('exercise-list').innerHTML = exercises.map(ex => `
-    <div class="ex-row">
-      <div>
-        <div class="ex-name">${ex.name}</div>
-        <div class="ex-detail">${ex.label}</div>
+  document.getElementById('exercise-list').innerHTML = exercises.map(ex => {
+    const prog = state.progress[ex.key];
+    const failText = prog.failCount ? ` · misses ${prog.failCount}/3` : '';
+    return `
+      <div class="ex-row">
+        <div>
+          <div class="ex-name">${ex.name}</div>
+          <div class="ex-detail">${ex.label}${failText}</div>
+        </div>
+        <div style="text-align:right;">
+          <div class="ex-weight">${formatWeight(wts[ex.key])}</div>
+          <div class="ex-sets">${prog.lastOutcome === 'deload' ? 'deloaded and rebuilding' : prog.lastOutcome === 'repeat' ? 'repeat until all reps land' : 'progress on success'}</div>
+        </div>
       </div>
-      <div style="text-align:right;">
-        <div class="ex-weight">${formatWeight(wts[ex.key])}</div>
-        <div class="ex-sets">planned working weight</div>
-      </div>
-    </div>
-  `).join('');
+    `;
+  }).join('');
 
+  renderWarmups();
   renderPlannedSets();
   renderSessionLog();
 
   const insights = [
-    `Workout ${type}: hit every planned set before adding weight next time. Quality reps first.`,
-    `Rest 3–5 minutes between heavy sets. Use the timer so your later sets don't fall apart.`,
-    `Week ${week}: keep the session clean and consistent. Small jumps add up fast on 5×5.`,
-    `Protein target today: ${Math.round(state.profile.bw * 2.2)}g. Recovery drives progression.`
+    `Workout ${type}: add weight only after every prescribed rep is locked in. Misses now repeat, not auto-progress.`,
+    recentFailures ? `You had ${recentFailures} recent lift outcomes that missed target reps. Own your rest periods and brace hard today.` : 'Your last few lift outcomes look clean. Keep technique sharp and earn the next jump.',
+    `Warm-ups are auto-built from today's work sets so you can ramp in without wasting energy.`,
+    `Protein target today: ${Math.round(state.profile.bw * 2.2)}g. Recovery is what lets the next progression stick.`
   ];
   document.getElementById('today-ai-text').textContent = insights[state.workouts.length % insights.length];
 }
 
 function renderPlannedSets() {
   const plan = buildPlannedSets();
-  const unitStep = getUnit() === 'lbs' ? '5' : '2.5';
   const html = plan.map(item => {
     const logged = getLoggedSetById(item.id);
     const statusClass = logged ? (logged.completed ? 'done' : 'failed') : '';
     const statusText = logged ? (logged.completed ? `Done · ${logged.reps}/${item.repsTarget}` : `Failed · ${logged.reps}/${item.repsTarget}`) : 'Planned';
-    const displayedWeight = logged ? formatWeightValue(logged.kg) : formatWeightValue(item.plannedKg);
     return `
       <div class="set-card ${statusClass}">
         <div class="set-top">
@@ -641,7 +720,7 @@ function renderSessionLog() {
   const el = document.getElementById('log-history');
   if (!state.currentSets.length) { el.textContent = ''; return; }
   el.innerHTML = state.currentSets.slice(-6).map(s =>
-    `<span style="margin-right:12px;">${s.completed ? '✓' : '!' } ${s.ex}: ${formatWeight(s.kg)} × ${s.reps}</span>`
+    `<span style="margin-right:12px;">${s.completed ? '✓' : '!'} ${s.ex}: ${formatWeight(s.kg)} × ${s.reps}</span>`
   ).join('');
 }
 
@@ -671,6 +750,32 @@ function logPlannedSet(id, failed = false) {
   showToast(`${loggedSet.completed ? 'Logged' : 'Marked failed'}: ${planItem.ex} ${formatWeight(planItem.plannedKg)} × ${reps}`);
 }
 
+function applyProgression(exKey, outcome) {
+  const prog = state.progress[exKey] || { ...DEFAULTS.progress[exKey] };
+  const increment = getIncrementKg(exKey);
+  if (outcome.success) {
+    prog.currentKg = roundWorkoutKg(prog.currentKg + increment, exKey);
+    prog.failCount = 0;
+    prog.completedSessions += 1;
+    prog.lastOutcome = 'success';
+    state.progress[exKey] = prog;
+    return { outcome: 'success', nextKg: prog.currentKg, note: `Add ${formatWeight(increment)}` };
+  }
+  prog.failCount += 1;
+  if (state.settings.deload && prog.failCount >= 3) {
+    const baseFloor = state.weights[exKey];
+    prog.currentKg = Math.max(baseFloor, roundWorkoutKg(prog.currentKg * 0.9, exKey));
+    prog.failCount = 0;
+    prog.deloads += 1;
+    prog.lastOutcome = 'deload';
+    state.progress[exKey] = prog;
+    return { outcome: 'deload', nextKg: prog.currentKg, note: `Deload to ${formatWeight(prog.currentKg)}` };
+  }
+  prog.lastOutcome = 'repeat';
+  state.progress[exKey] = prog;
+  return { outcome: 'repeat', nextKg: prog.currentKg, note: `Repeat ${formatWeight(prog.currentKg)}` };
+}
+
 function completeWorkout() {
   if (!state.currentSets.length) {
     showToast('Log at least one set before completing');
@@ -682,16 +787,30 @@ function completeWorkout() {
     const proceed = confirm(`Only ${doneCount}/${plan.length} sets are logged. Complete workout anyway?`);
     if (!proceed) return;
   }
-  const successfulSets = state.currentSets.filter(s => s.completed).length;
   const type = currentWorkoutType();
-  const wts = currentWeights();
+  const exerciseResults = getWorkoutPlan(type).map(ex => {
+    const outcome = getExerciseOutcome(ex.key);
+    const progression = applyProgression(ex.key, outcome);
+    return {
+      key: ex.key,
+      name: ex.name,
+      workKg: currentWeights()[ex.key],
+      setsLogged: outcome.setsLogged,
+      setsTarget: outcome.setsTarget,
+      failedSets: outcome.failedSets,
+      outcome: progression.outcome,
+      nextKg: progression.nextKg,
+      note: progression.note,
+    };
+  });
+  const successfulSets = state.currentSets.filter(s => s.completed).length;
   state.workouts.push({
     date: new Date().toISOString(),
     type,
-    weights: { ...wts },
     sets: [...state.currentSets],
     successfulSets,
     plannedSets: plan.length,
+    exerciseResults,
   });
   state.currentSets = [];
   stopRestTimer();
@@ -699,7 +818,8 @@ function completeWorkout() {
   saveToCloud();
   renderToday();
   renderProgress();
-  showToast(`Workout complete! ${successfulSets}/${plan.length} good sets logged`);
+  const deloaded = exerciseResults.filter(r => r.outcome === 'deload').map(r => r.name);
+  showToast(deloaded.length ? `Workout saved — deload triggered for ${deloaded.join(', ')}` : `Workout complete! ${successfulSets}/${plan.length} good sets logged`);
 }
 
 // ── REST TIMER ───────────────────────────────────────────────────────────────
@@ -747,24 +867,36 @@ function resetRestTimer() {
 
 // ── PROGRESS ─────────────────────────────────────────────────────────────────
 function renderProgress() {
-  const wts = currentWeights();
   const count = state.workouts.length;
+  const current = currentWeights();
+  const bestByLift = { squat: 0, bench: 0, dead: 0, ohp: 0, row: 0 };
+  state.workouts.forEach(w => {
+    (w.exerciseResults || []).forEach(r => {
+      bestByLift[r.key] = Math.max(bestByLift[r.key] || 0, r.workKg || 0);
+    });
+  });
+  Object.keys(bestByLift).forEach(key => {
+    bestByLift[key] = Math.max(bestByLift[key], state.progress[key]?.currentKg || state.weights[key]);
+  });
+
   document.getElementById('p-total').textContent = count;
-  document.getElementById('p-squat').textContent = formatWeightValue(wts.squat);
-  document.getElementById('p-dead').textContent = formatWeightValue(wts.dead);
+  document.getElementById('p-squat').textContent = formatWeightValue(bestByLift.squat);
+  document.getElementById('p-dead').textContent = formatWeightValue(bestByLift.dead);
 
   const lifts = [
-    { name: 'Squat', val: wts.squat, max: state.weights.squat + unitToKg(220), color: '#7c6ef5' },
-    { name: 'Deadlift', val: wts.dead, max: state.weights.dead + unitToKg(275), color: '#3ecf8e' },
-    { name: 'Bench press', val: wts.bench, max: state.weights.bench + unitToKg(165), color: '#378ADD' },
-    { name: 'Barbell row', val: wts.row, max: state.weights.row + unitToKg(135), color: '#f5a623' },
-    { name: 'Overhead press', val: wts.ohp, max: state.weights.ohp + unitToKg(110), color: '#f06060' },
+    { key: 'squat', name: 'Squat', val: current.squat, best: bestByLift.squat, max: Math.max(state.weights.squat + unitToKg(220), bestByLift.squat * 1.15), color: '#7c6ef5' },
+    { key: 'dead', name: 'Deadlift', val: current.dead, best: bestByLift.dead, max: Math.max(state.weights.dead + unitToKg(275), bestByLift.dead * 1.15), color: '#3ecf8e' },
+    { key: 'bench', name: 'Bench press', val: current.bench, best: bestByLift.bench, max: Math.max(state.weights.bench + unitToKg(165), bestByLift.bench * 1.15), color: '#378ADD' },
+    { key: 'row', name: 'Barbell row', val: current.row, best: bestByLift.row, max: Math.max(state.weights.row + unitToKg(135), bestByLift.row * 1.15), color: '#f5a623' },
+    { key: 'ohp', name: 'Overhead press', val: current.ohp, best: bestByLift.ohp, max: Math.max(state.weights.ohp + unitToKg(110), bestByLift.ohp * 1.15), color: '#f06060' },
   ];
   document.getElementById('lift-bars').innerHTML = lifts.map(l => {
     const pct = Math.min(100, Math.round((l.val / l.max) * 100));
+    const prog = state.progress[l.key] || DEFAULTS.progress[l.key];
     return `<div class="bar-wrap">
-      <div class="bar-label"><span>${l.name}</span><span>${formatWeight(l.val)}</span></div>
+      <div class="bar-label"><span>${l.name}</span><span>${formatWeight(l.val)} · best ${formatWeight(l.best)}</span></div>
       <div class="bar-bg"><div class="bar-fill" style="width:${pct}%;background:${l.color};"></div></div>
+      <div class="metric-sub" style="margin-top:6px;">${prog.lastOutcome === 'deload' ? 'Recent deload' : prog.lastOutcome === 'repeat' ? `Stall watch · misses ${prog.failCount}/3` : 'On track'}</div>
     </div>`;
   }).join('');
 
@@ -773,8 +905,9 @@ function renderProgress() {
     ? hist.map(w => {
         const d = new Date(w.date);
         const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+        const summary = (w.exerciseResults || []).map(r => `${r.name.split(' ')[0]}: ${r.outcome}`).join(' · ');
         return `<div class="history-row">
-          <div><div style="font-weight:500;">Workout ${w.type}</div><div class="history-date">${ds}</div></div>
+          <div><div style="font-weight:500;">Workout ${w.type}</div><div class="history-date">${ds} · ${summary}</div></div>
           <div style="text-align:right;font-size:13px;color:var(--muted);">${w.successfulSets || 0}/${w.plannedSets || w.sets.length} good sets</div>
         </div>`;
       }).join('')
@@ -834,6 +967,11 @@ function captureWeightsFromForm() {
   state.weights.dead = toKg(parseFloat(document.getElementById('sw-dead').value), DEFAULTS.weights.dead);
   state.weights.ohp = toKg(parseFloat(document.getElementById('sw-ohp').value), DEFAULTS.weights.ohp);
   state.weights.row = toKg(parseFloat(document.getElementById('sw-row').value), DEFAULTS.weights.row);
+  Object.keys(state.weights).forEach(key => {
+    state.progress[key].currentKg = state.weights[key];
+    state.progress[key].failCount = 0;
+    state.progress[key].lastOutcome = 'new';
+  });
 }
 function saveSettings() {
   captureProfileFromForm();
@@ -916,6 +1054,7 @@ function bindAutosave() {
 // ── INIT ─────────────────────────────────────────────────────────────────────
 (async () => {
   await loadFromCloud();
+  seedProgressFromWeights();
   updateUnitLabels();
   populateSettings();
   renderToday();
