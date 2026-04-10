@@ -201,6 +201,36 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 /* ── Toast ─────────────────────────────────────────────────────── */
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
+/* ── Plate calculator ──────────────────────────────────────────── */
+.plate-input-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
+.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;}
+.plate-label{font-size:14px;font-weight:600;color:var(--text);}
+.plate-sub{font-size:11px;color:var(--muted);margin-top:1px;}
+.plate-counter{display:flex;align-items:center;gap:10px;}
+.plate-count{font-family:var(--font-display);font-size:22px;font-weight:700;min-width:28px;text-align:center;color:var(--text);}
+.plate-btn{width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);line-height:1;transition:background .1s;}
+.plate-btn:hover{background:var(--purple-dim);color:var(--purple);}
+.bar-weight-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
+.bar-weight-row label{font-size:13px;color:var(--muted);white-space:nowrap;}
+.bar-weight-row input{width:90px;text-align:center;}
+
+/* ── Plate display diagram ─────────────────────────────────────── */
+.plate-diagram{margin:14px 0;overflow-x:auto;}
+.bar-visual{display:flex;align-items:center;justify-content:center;gap:0;min-height:60px;padding:0 4px;}
+.bar-sleeve{width:28px;height:10px;background:var(--border);border-radius:4px;flex-shrink:0;}
+.bar-center{flex:1;max-width:100px;height:7px;background:var(--border);border-radius:2px;position:relative;}
+.bar-center::after{content:'BAR';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
+.plate-stack{display:flex;align-items:center;gap:2px;}
+.plate-block{border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#fff;font-size:10px;letter-spacing:.02em;flex-shrink:0;}
+.plate-result{background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);border:1px solid rgba(32,22,16,.06);border-radius:16px;padding:14px;margin-top:4px;}
+.plate-result-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text);}
+.plate-result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(32,22,16,.06);font-size:13px;}
+.plate-result-row:last-child{border-bottom:none;}
+.plate-result-ex{font-weight:600;color:var(--text);}
+.plate-result-detail{color:var(--muted);font-size:12px;margin-top:2px;}
+.plate-result-badge{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--red);}
+.plate-impossible{background:#fff8f0;border:1px solid rgba(183,121,31,.2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--amber);margin-top:4px;}
+
 
 /* ── UI polish overrides ─────────────────────────────────────── */
 :root{
@@ -827,44 +857,33 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
         <div id="history-list"><p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p></div>
       </div>
     </div>
-
-    <!-- ── NUTRITION ───────────────────────────────────────────── -->
-    <div id="sec-nutrition" class="section">
-      <div class="metrics">
-        <div class="metric"><div class="metric-label">Calories</div><div class="metric-value" id="n-cals" style="color:var(--green);">2,340</div><div class="metric-sub" id="n-day-type">training day</div></div>
-        <div class="metric"><div class="metric-label">Protein</div><div class="metric-value" id="n-protein">185g</div><div class="metric-sub">priority #1</div></div>
-        <div class="metric"><div class="metric-label">Carbs</div><div class="metric-value" id="n-carbs">220g</div><div class="metric-sub" id="n-carb-note">higher today</div></div>
+    <!-- ── PLATES ─────────────────────────────────────────────── -->
+    <div id="sec-plates" class="section">
+      <div class="card">
+        <div class="card-title">Your plate inventory</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Tell us what plates you own — the calculator uses this to tell you exactly what to load.</p>
+        <div class="bar-weight-row">
+          <label>Bar weight</label>
+          <input type="number" id="bar-weight" value="45" min="0" step="1" oninput="savePlates();calcAllPlates()">
+          <span style="font-size:13px;color:var(--muted);" id="bar-unit-label">lbs</span>
+        </div>
+        <div class="plate-input-grid" id="plate-inputs"></div>
+        <p style="font-size:12px;color:var(--muted);margin-top:4px;">Counts are total plates you own (both sides use half each).</p>
       </div>
 
       <div class="card">
-        <div class="card-title">Today's meals</div>
-        <div class="meal-row"><div class="meal-dot" style="background:var(--green);"></div><div style="flex:1;"><div class="meal-name">Breakfast</div><div class="meal-detail">Greek yogurt bowl + eggs + oats</div></div><div><div class="meal-cals">540</div><div class="meal-macro">42p / 52c</div></div></div>
-        <div class="meal-row"><div class="meal-dot" style="background:var(--purple);"></div><div style="flex:1;"><div class="meal-name">Pre-workout</div><div class="meal-detail">Rice + chicken + banana</div></div><div><div class="meal-cals">620</div><div class="meal-macro">48p / 80c</div></div></div>
-        <div class="meal-row"><div class="meal-dot" style="background:var(--amber);"></div><div style="flex:1;"><div class="meal-name">Post-workout</div><div class="meal-detail">Shake + rice cakes + PB</div></div><div><div class="meal-cals">480</div><div class="meal-macro">40p / 44c</div></div></div>
-        <div class="meal-row"><div class="meal-dot" style="background:var(--muted);"></div><div style="flex:1;"><div class="meal-name">Dinner</div><div class="meal-detail">Salmon + sweet potato + greens</div></div><div><div class="meal-cals">700</div><div class="meal-macro">55p / 44c</div></div></div>
-        <div class="ai-box">
-          <div class="ai-box-label">Nutrition AI</div>
-          <p id="nutrition-ai-text">Training day: eat more carbs around your workout. Hit 185g protein no matter what — that's the #1 lever for recomposition.</p>
-        </div>
+        <div class="card-title">Today's plate loads</div>
+        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Based on your current working weights and the plates you have.</p>
+        <div id="plate-results"></div>
       </div>
 
       <div class="card">
-        <div class="card-title">Sunday meal prep</div>
-        <div class="prep-card">
-          <div class="prep-title">Oven chicken breast (2 kg)</div>
-          <div class="prep-meta"><span class="badge b-green">35 min</span><span class="badge b-purple">62g protein / 200g</span></div>
-          <div class="prep-steps">Season with olive oil, garlic powder, paprika, salt. Bake 200°C for 22–25 min. Portion into 200g containers.</div>
+        <div class="card-title">Custom calculator</div>
+        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
+          <input type="number" id="custom-weight" placeholder="Target weight" step="5" style="flex:1;min-width:120px;" oninput="calcCustomPlates()">
+          <span style="font-size:13px;color:var(--muted);" id="custom-unit-label">lbs</span>
         </div>
-        <div class="prep-card">
-          <div class="prep-title">White rice (1.5 kg dry)</div>
-          <div class="prep-meta"><span class="badge b-green">20 min</span><span class="badge b-amber">carb base</span></div>
-          <div class="prep-steps">2:1 water ratio. Portion 150g (training days) / 80g (rest days).</div>
-        </div>
-        <div class="prep-card">
-          <div class="prep-title">Overnight oat jars (5)</div>
-          <div class="prep-meta"><span class="badge b-green">10 min</span><span class="badge b-purple">42g protein / jar</span></div>
-          <div class="prep-steps">80g oats + 200g Greek yogurt + 150ml milk + 1 tbsp honey. Refrigerate overnight.</div>
-        </div>
+        <div id="custom-result"></div>
       </div>
     </div>
 
@@ -938,8 +957,8 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
     <button class="nav-btn" id="nav-progress" onclick="showSection('progress')">
       <span class="nav-icon">📈</span>Progress
     </button>
-    <button class="nav-btn" id="nav-nutrition" onclick="showSection('nutrition')">
-      <span class="nav-icon">🥗</span>Nutrition
+    <button class="nav-btn" id="nav-plates" onclick="showSection('plates')">
+      <span class="nav-icon">🏋️</span>Plates
     </button>
     <button class="nav-btn" id="nav-settings" onclick="showSection('settings')">
       <span class="nav-icon">⚙️</span>Settings
@@ -986,6 +1005,8 @@ const defaultState = {
   settings: { adapt: true, deload: true, cycling: true, mealplan: true, units: 'kg' },
   checkins: [],
   coach: { style: 'mentzer' },
+  plates: [0, 0, 4, 4, 4, 4],
+  barWeightLbs: 45,
 };
 
 let state = JSON.parse(JSON.stringify(defaultState));
@@ -1043,6 +1064,8 @@ function normalizeState(data) {
     weights: { ...defaultState.weights, ...(data.weights || {}) },
     settings: { ...defaultState.settings, ...(data.settings || {}) },
     coach: { ...defaultState.coach, ...(data.coach || {}) },
+    plates: Array.isArray(data.plates) ? data.plates : defaultState.plates,
+    barWeightLbs: Number.isFinite(data.barWeightLbs) ? data.barWeightLbs : 45,
     workouts: Array.isArray(data.workouts) ? data.workouts : [],
     currentSets: Array.isArray(data.currentSets) ? data.currentSets : [],
     checkins: Array.isArray(data.checkins) ? data.checkins : [],
@@ -1110,6 +1133,9 @@ function sanitizeEnteredWeightKg(val, key, fallback) {
   return roundToStep(val, 2.5);
 }
 function updateUnitLabels() {
+  buildPlateInputs();
+  calcAllPlates();
+  calcCustomPlates();
   const unit = getUnit();
   const bwLabel = document.getElementById('bw-label');
   if (bwLabel) bwLabel.textContent = `Body weight (${unit})`;
@@ -1139,7 +1165,7 @@ function showSection(name) {
   document.getElementById('sec-' + name).classList.add('active');
   document.getElementById('nav-' + name).classList.add('active');
   if (name === 'progress') renderProgress();
-  if (name === 'nutrition') renderNutrition();
+  if (name === 'plates') calcAllPlates();
 }
 
 // ── WORKOUT LOGIC ─────────────────────────────────────────────────────────────
@@ -1523,7 +1549,6 @@ function completeWorkout() {
   saveToCloud();
   renderToday();
   renderProgress();
-  renderNutrition();
   const deloaded = exerciseResults.filter(r => r.outcome === 'deload').map(r => r.name);
   showToast(deloaded.length ? `Workout saved — deload triggered for ${deloaded.join(', ')}` : `Workout complete! ${successfulSets}/${plan.length} good sets logged`);
 }
@@ -1781,42 +1806,6 @@ function renderProgress() {
     : '<p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p>';
 }
 
-// ── NUTRITION ─────────────────────────────────────────────────────────────────
-function nutritionAdvice(goal, stats, protein, cals, carbs) {
-  if (goal === 'Lean bulk' && stats.bwDelta <= 0 && stats.workouts.length >= 2) {
-    return `You are asking your body to grow without providing enough material. Raise calories to about ${cals}, keep protein at ${protein}g, and concentrate carbs around training.`;
-  }
-  if (goal === 'Cut' && stats.bwDelta >= 0.2) {
-    return `Fat loss requires precision. Bring calories down to about ${cals}, keep protein at ${protein}g, and do not let appetite negotiate your plan.`;
-  }
-  if (goal === 'Recomposition') {
-    return `Recomposition rewards discipline. Keep protein at ${protein}g, calories around ${cals}, and place roughly ${carbs}g of carbs where performance matters most.`;
-  }
-  return `Keep protein at ${protein}g and drive most of your ${carbs}g of carbs toward the training window. The diet should serve the work, not compete with it.`;
-}
-
-function renderNutrition() {
-  const checkin = latestCheckin();
-  const stats = weeklyStats();
-  const goal = state.profile.goal;
-  const bw = Number(checkin?.bw || state.profile.bw || 85);
-  const protein = Math.round(bw * 2.2);
-  let cals = Math.round(bw * 29);
-  if (goal === 'Lean bulk') cals += 250;
-  if (goal === 'Cut') cals -= 350;
-  if (goal === 'Lean bulk' && stats.bwDelta <= 0 && stats.workouts.length >= 2) cals += 150;
-  if (goal === 'Cut' && stats.bwDelta >= 0.2) cals -= 150;
-  const isTraining = new Date().getDay() % 2 !== 0;
-  const carbs = Math.max(120, Math.round((isTraining ? 0.4 : 0.25) * cals / 4));
-
-  document.getElementById('n-cals').textContent = cals.toLocaleString();
-  document.getElementById('n-protein').textContent = protein + 'g';
-  document.getElementById('n-carbs').textContent = carbs + 'g';
-  document.getElementById('n-day-type').textContent = isTraining ? 'training day' : 'rest day';
-  document.getElementById('n-carb-note').textContent = isTraining ? 'push carbs around training' : 'pull carbs slightly lower';
-  document.getElementById('nutrition-ai-text').textContent = nutritionAdvice(goal, stats, protein, cals, carbs);
-}
-
 // ── CHECK-IN ─────────────────────────────────────────────────────────────────
 function populateCheckin() {
   const checkin = state.checkins.find(c => c.date === todayKey()) || latestCheckin();
@@ -1841,7 +1830,6 @@ function saveCheckin() {
   if (entry.bw) state.profile.bw = entry.bw;
   saveToCloud();
   renderToday();
-  renderNutrition();
   renderProgress();
   populateSettings();
   showToast('Check-in saved');
@@ -1899,7 +1887,6 @@ function saveSettings() {
   updateUnitLabels();
   populateSettings();
   renderToday();
-  renderNutrition();
   renderProgress();
   saveToCloud();
   showToast('Profile saved');
@@ -1918,7 +1905,6 @@ function autosaveProfile() {
   updateUnitLabels();
   populateSettings();
   renderToday();
-  renderNutrition();
   renderProgress();
   saveToCloud();
 }
@@ -1949,11 +1935,260 @@ function confirmReset() {
     updateUnitLabels();
     populateSettings();
     renderToday();
-    renderNutrition();
     renderProgress();
     populateCheckin();
     showToast('Data reset');
   }
+}
+
+
+// ── PLATE CALCULATOR ─────────────────────────────────────────────────────────
+// All plate sizes in lbs (converted if user is in kg)
+const PLATE_SIZES_LBS = [45, 35, 25, 10, 5, 2.5];
+const PLATE_COLORS = {
+  45: '#1a6cdb',   // blue
+  35: '#b8a000',   // yellow
+  25: '#27a04a',   // green
+  10: '#999',      // gray
+  5: '#c23030',    // red
+  2.5: '#555',     // dark gray
+};
+const PLATE_HEIGHTS = { 45: 52, 35: 46, 25: 40, 10: 28, 5: 22, 2.5: 18 };
+
+function getPlateUnit() {
+  return getUnit(); // matches workout unit setting
+}
+
+function plateSizesInUnit() {
+  const u = getPlateUnit();
+  return PLATE_SIZES_LBS.map(lb => u === 'kg' ? Math.round(lb * LB_TO_KG * 10) / 10 : lb);
+}
+
+function plateSizeLbFromIndex(i) {
+  return PLATE_SIZES_LBS[i];
+}
+
+function getPlateInventory() {
+  // stored as count per plate size (index matches PLATE_SIZES_LBS)
+  if (!state.plates) state.plates = [0, 0, 4, 4, 4, 4]; // default
+  while (state.plates.length < PLATE_SIZES_LBS.length) state.plates.push(0);
+  return state.plates;
+}
+
+function getBarWeightLbs() {
+  const stored = state.barWeightLbs;
+  return Number.isFinite(stored) ? stored : 45;
+}
+
+function buildPlateInputs() {
+  const inv = getPlateInventory();
+  const unit = getPlateUnit();
+  const sizes = plateSizesInUnit();
+  const container = document.getElementById('plate-inputs');
+  if (!container) return;
+  container.innerHTML = PLATE_SIZES_LBS.map((lb, i) => {
+    const display = unit === 'kg' ? sizes[i] + ' kg' : lb + ' lbs';
+    const count = inv[i] || 0;
+    return `<div class="plate-input-row">
+      <div>
+        <div class="plate-label" style="color:${PLATE_COLORS[lb]};">${display}</div>
+        <div class="plate-sub">pair count</div>
+      </div>
+      <div class="plate-counter">
+        <button class="plate-btn" onclick="changePlate(${i},-2)">−</button>
+        <div class="plate-count" id="pc-${i}">${count}</div>
+        <button class="plate-btn" onclick="changePlate(${i},2)">+</button>
+      </div>
+    </div>`;
+  }).join('');
+  // bar weight label
+  const barLbl = document.getElementById('bar-unit-label');
+  const customLbl = document.getElementById('custom-unit-label');
+  if (barLbl) barLbl.textContent = unit;
+  if (customLbl) customLbl.textContent = unit;
+  // update bar weight input display
+  const barInput = document.getElementById('bar-weight');
+  if (barInput) {
+    const barLbs = getBarWeightLbs();
+    barInput.value = unit === 'kg' ? Math.round(barLbs * LB_TO_KG * 10) / 10 : barLbs;
+  }
+}
+
+function changePlate(index, delta) {
+  const inv = getPlateInventory();
+  inv[index] = Math.max(0, (inv[index] || 0) + delta);
+  state.plates = inv;
+  const el = document.getElementById('pc-' + index);
+  if (el) el.textContent = inv[index];
+  savePlates();
+  calcAllPlates();
+  calcCustomPlates();
+}
+
+function savePlates() {
+  // Read bar weight from input
+  const barInput = document.getElementById('bar-weight');
+  if (barInput) {
+    const val = parseFloat(barInput.value);
+    if (Number.isFinite(val)) {
+      state.barWeightLbs = getPlateUnit() === 'kg' ? val / LB_TO_KG : val;
+    }
+  }
+  saveToCloud();
+}
+
+function calcPlatesForWeight(targetLbs, barLbs, inventoryPairs) {
+  // inventoryPairs[i] = number of PAIRS available for plate size i
+  const sideWeightLbs = (targetLbs - barLbs) / 2;
+  if (sideWeightLbs < 0) return { possible: false, reason: 'Target is less than bar weight' };
+  if (sideWeightLbs === 0) return { possible: true, plates: [], totalLbs: barLbs };
+
+  const result = [];
+  let remaining = sideWeightLbs;
+  const pairsUsed = new Array(PLATE_SIZES_LBS.length).fill(0);
+
+  for (let i = 0; i < PLATE_SIZES_LBS.length; i++) {
+    const plateLbs = PLATE_SIZES_LBS[i];
+    const maxPairs = Math.floor(inventoryPairs[i] / 2); // pairs you can put on (need 2 for both sides)
+    if (plateLbs <= remaining + 0.001 && maxPairs > 0) {
+      const needed = Math.floor(remaining / plateLbs);
+      const used = Math.min(needed, maxPairs);
+      if (used > 0) {
+        result.push({ lb: plateLbs, count: used });
+        pairsUsed[i] = used;
+        remaining -= used * plateLbs;
+        remaining = Math.round(remaining * 100) / 100;
+      }
+    }
+  }
+
+  if (remaining > 0.1) {
+    return { possible: false, reason: `Can't make up ${remaining.toFixed(1)} lbs with available plates` };
+  }
+  const total = barLbs + result.reduce((s, p) => s + p.lb * p.count * 2, 0);
+  return { possible: true, plates: result, totalLbs: Math.round(total * 10) / 10 };
+}
+
+function buildPlateVisual(platesPerSide) {
+  const unit = getPlateUnit();
+  if (!platesPerSide.length) return '<div style="text-align:center;color:var(--muted);font-size:13px;padding:8px 0;">Just the bar</div>';
+
+  const leftStack = [...platesPerSide].reverse().map(p => {
+    const h = PLATE_HEIGHTS[p.lb] || 28;
+    const w = Math.max(12, Math.round(h * 0.38));
+    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
+    return Array(p.count).fill(0).map(() =>
+      `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.lb]};writing-mode:vertical-rl;text-orientation:mixed;">${display}</div>`
+    ).join('');
+  }).join('');
+
+  const rightStack = platesPerSide.map(p => {
+    const h = PLATE_HEIGHTS[p.lb] || 28;
+    const w = Math.max(12, Math.round(h * 0.38));
+    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
+    return Array(p.count).fill(0).map(() =>
+      `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.lb]};writing-mode:vertical-rl;text-orientation:mixed;">${display}</div>`
+    ).join('');
+  }).join('');
+
+  return `<div class="plate-diagram">
+    <div class="bar-visual">
+      <div class="bar-sleeve"></div>
+      <div class="plate-stack">${leftStack}</div>
+      <div class="bar-center"></div>
+      <div class="plate-stack">${rightStack}</div>
+      <div class="bar-sleeve"></div>
+    </div>
+  </div>`;
+}
+
+function calcAllPlates() {
+  const inv = getPlateInventory();
+  const barLbs = getBarWeightLbs();
+  const wts = currentWeights();
+  const exercises = getWorkoutPlan();
+  const unit = getPlateUnit();
+
+  const results = exercises.map(ex => {
+    const workKg = wts[ex.key];
+    const workLbs = workKg * KG_TO_LB;
+    const targetLbs = unit === 'kg' ? workKg / LB_TO_KG : workLbs;
+    // always calc in lbs internally
+    const targetLbsActual = workKg * KG_TO_LB;
+    const calc = calcPlatesForWeight(targetLbsActual, barLbs, inv);
+    return { ex, workKg, calc };
+  });
+
+  const container = document.getElementById('plate-results');
+  if (!container) return;
+
+  container.innerHTML = results.map(({ ex, workKg, calc }) => {
+    if (!calc.possible) {
+      return `<div class="plate-result" style="margin-bottom:10px;">
+        <div class="plate-result-title">${ex.name}</div>
+        <div class="plate-impossible">Can't load ${formatWeight(workKg)} with your plates — ${calc.reason}.</div>
+      </div>`;
+    }
+    const perSideList = calc.plates.map(p => {
+      const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
+      return `${p.count}× ${display}${unit}`;
+    }).join(', ') || 'none';
+    const barDisplay = unit === 'kg' ? Math.round(barLbs * LB_TO_KG * 10) / 10 : barLbs;
+
+    return `<div class="plate-result" style="margin-bottom:10px;">
+      <div class="plate-result-title">${ex.name} — ${formatWeight(workKg)}</div>
+      ${buildPlateVisual(calc.plates)}
+      <div class="plate-result-row">
+        <div><div class="plate-result-ex">Per side</div><div class="plate-result-detail">${perSideList || 'bar only'}</div></div>
+        <div class="plate-result-badge">${perSideList}</div>
+      </div>
+      <div class="plate-result-row">
+        <div><div class="plate-result-ex">Bar</div></div>
+        <div class="plate-result-badge">${barDisplay}${unit}</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function calcCustomPlates() {
+  const input = document.getElementById('custom-weight');
+  const container = document.getElementById('custom-result');
+  if (!input || !container) return;
+  const val = parseFloat(input.value);
+  if (!Number.isFinite(val) || val <= 0) { container.innerHTML = ''; return; }
+
+  const unit = getPlateUnit();
+  const inv = getPlateInventory();
+  const barLbs = getBarWeightLbs();
+  const targetLbs = unit === 'kg' ? val / LB_TO_KG : val;
+  const calc = calcPlatesForWeight(targetLbs, barLbs, inv);
+
+  if (!calc.possible) {
+    container.innerHTML = `<div class="plate-impossible">${calc.reason}. Try adjusting your plate inventory in the settings above.</div>`;
+    return;
+  }
+
+  const perSideList = calc.plates.map(p => {
+    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
+    return `${p.count}× ${display}${unit}`;
+  }).join(', ') || 'none';
+
+  const actualDisplay = unit === 'kg'
+    ? Math.round(calc.totalLbs * LB_TO_KG * 10) / 10 + ' kg'
+    : calc.totalLbs + ' lbs';
+
+  container.innerHTML = `<div class="plate-result">
+    <div class="plate-result-title">${val}${unit} load</div>
+    ${buildPlateVisual(calc.plates)}
+    <div class="plate-result-row">
+      <div><div class="plate-result-ex">Per side</div></div>
+      <div class="plate-result-badge">${perSideList || 'bar only'}</div>
+    </div>
+    <div class="plate-result-row">
+      <div><div class="plate-result-ex">Actual total</div><div class="plate-result-detail">Closest achievable weight</div></div>
+      <div class="plate-result-badge">${actualDisplay}</div>
+    </div>
+  </div>`;
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
@@ -1982,10 +2217,11 @@ function bindAutosave() {
   populateSettings();
   renderToday();
   renderProgress();
-  renderNutrition();
   resetRestTimer();
   syncWarmupBox();
   bindAutosave();
+  buildPlateInputs();
+  calcAllPlates();
 })();
 </script>
 </body>
