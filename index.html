@@ -1007,6 +1007,7 @@ const defaultState = {
   coach: { style: 'mentzer' },
   plates: [0, 0, 4, 4, 4, 4],
   barWeightLbs: 45,
+  barWeight: { lbs: 45, kg: 20 },
 };
 
 let state = JSON.parse(JSON.stringify(defaultState));
@@ -1066,6 +1067,7 @@ function normalizeState(data) {
     coach: { ...defaultState.coach, ...(data.coach || {}) },
     plates: Array.isArray(data.plates) ? data.plates : defaultState.plates,
     barWeightLbs: Number.isFinite(data.barWeightLbs) ? data.barWeightLbs : 45,
+    barWeight: (data.barWeight && Number.isFinite(data.barWeight.lbs)) ? data.barWeight : { lbs: (data.barWeightLbs || 45), kg: 20 },
     workouts: Array.isArray(data.workouts) ? data.workouts : [],
     currentSets: Array.isArray(data.currentSets) ? data.currentSets : [],
     checkins: Array.isArray(data.checkins) ? data.checkins : [],
@@ -1943,56 +1945,74 @@ function confirmReset() {
 
 
 // ── PLATE CALCULATOR ─────────────────────────────────────────────────────────
-// All plate sizes in lbs (converted if user is in kg)
-const PLATE_SIZES_LBS = [45, 35, 25, 10, 5, 2.5];
-const PLATE_COLORS = {
-  45: '#1a6cdb',   // blue
-  35: '#b8a000',   // yellow
-  25: '#27a04a',   // green
-  10: '#999',      // gray
-  5: '#c23030',    // red
-  2.5: '#555',     // dark gray
+//
+// DESIGN: All plate sizes have two canonical sets — lbs and kg.
+// We never convert between them mid-calc. The unit setting picks
+// which set to use. Bar weight is stored separately in lbs AND kg
+// so switching units never causes rounding drift.
+//
+// Standard kg plates: 20, 15, 10, 5, 2.5, 1.25
+// Standard lb plates: 45, 35, 25, 10, 5, 2.5
+
+const PLATES = {
+  lbs: [45, 35, 25, 10, 5, 2.5],
+  kg:  [20, 15, 10,  5, 2.5, 1.25],
 };
-const PLATE_HEIGHTS = { 45: 52, 35: 46, 25: 40, 10: 28, 5: 22, 2.5: 18 };
+const PLATE_COLORS = {
+  // lbs keys
+  45: '#1a6cdb', 35: '#b8a000', 25: '#27a04a',
+  // kg keys (same index, different size)
+  20: '#1a6cdb', 15: '#b8a000',
+  // shared
+  10: '#999', 5: '#c23030', 2.5: '#555', 1.25: '#333',
+};
+const PLATE_HEIGHTS = {
+  45: 52, 35: 46, 25: 40, 20: 52, 15: 46,
+  10: 28, 5: 22, 2.5: 18, 1.25: 14,
+};
 
-function getPlateUnit() {
-  return getUnit(); // matches workout unit setting
-}
+// Bar canonical values — never derived from each other
+const BAR_DEFAULTS = { lbs: 45, kg: 20 };
 
-function plateSizesInUnit() {
-  const u = getPlateUnit();
-  return PLATE_SIZES_LBS.map(lb => u === 'kg' ? Math.round(lb * LB_TO_KG * 10) / 10 : lb);
-}
-
-function plateSizeLbFromIndex(i) {
-  return PLATE_SIZES_LBS[i];
-}
+function getPlateUnit() { return getUnit(); }
+function plateSizes() { return PLATES[getPlateUnit()]; }
 
 function getPlateInventory() {
-  // stored as count per plate size (index matches PLATE_SIZES_LBS)
-  if (!state.plates) state.plates = [0, 0, 4, 4, 4, 4]; // default
-  while (state.plates.length < PLATE_SIZES_LBS.length) state.plates.push(0);
+  if (!state.plates) state.plates = [0, 0, 4, 4, 4, 4];
+  while (state.plates.length < 6) state.plates.push(0);
   return state.plates;
 }
 
-function getBarWeightLbs() {
-  const stored = state.barWeightLbs;
-  return Number.isFinite(stored) ? stored : 45;
+// Bar weight stored as { lbs, kg } object — never cross-converted
+function getBarWeight() {
+  const u = getPlateUnit();
+  if (state.barWeight && Number.isFinite(state.barWeight[u])) return state.barWeight[u];
+  // legacy: migrate old barWeightLbs field
+  if (u === 'lbs' && Number.isFinite(state.barWeightLbs)) return state.barWeightLbs;
+  return BAR_DEFAULTS[u];
+}
+
+function setBarWeight(val) {
+  const u = getPlateUnit();
+  if (!state.barWeight) state.barWeight = { ...BAR_DEFAULTS };
+  state.barWeight[u] = val;
+  // keep legacy field in sync for lbs
+  if (u === 'lbs') state.barWeightLbs = val;
 }
 
 function buildPlateInputs() {
   const inv = getPlateInventory();
   const unit = getPlateUnit();
-  const sizes = plateSizesInUnit();
+  const sizes = plateSizes();
   const container = document.getElementById('plate-inputs');
   if (!container) return;
-  container.innerHTML = PLATE_SIZES_LBS.map((lb, i) => {
-    const display = unit === 'kg' ? sizes[i] + ' kg' : lb + ' lbs';
+
+  container.innerHTML = sizes.map((size, i) => {
     const count = inv[i] || 0;
     return `<div class="plate-input-row">
       <div>
-        <div class="plate-label" style="color:${PLATE_COLORS[lb]};">${display}</div>
-        <div class="plate-sub">pair count</div>
+        <div class="plate-label" style="color:${PLATE_COLORS[size]};">${size} ${unit}</div>
+        <div class="plate-sub">total plates owned</div>
       </div>
       <div class="plate-counter">
         <button class="plate-btn" onclick="changePlate(${i},-2)">−</button>
@@ -2001,17 +2021,15 @@ function buildPlateInputs() {
       </div>
     </div>`;
   }).join('');
-  // bar weight label
+
   const barLbl = document.getElementById('bar-unit-label');
   const customLbl = document.getElementById('custom-unit-label');
   if (barLbl) barLbl.textContent = unit;
   if (customLbl) customLbl.textContent = unit;
-  // update bar weight input display
+
+  // Set bar input to the canonical value for this unit — no conversion
   const barInput = document.getElementById('bar-weight');
-  if (barInput) {
-    const barLbs = getBarWeightLbs();
-    barInput.value = unit === 'kg' ? Math.round(barLbs * LB_TO_KG * 10) / 10 : barLbs;
-  }
+  if (barInput) barInput.value = getBarWeight();
 }
 
 function changePlate(index, delta) {
@@ -2026,127 +2044,147 @@ function changePlate(index, delta) {
 }
 
 function savePlates() {
-  // Read bar weight from input
   const barInput = document.getElementById('bar-weight');
   if (barInput) {
     const val = parseFloat(barInput.value);
-    if (Number.isFinite(val)) {
-      state.barWeightLbs = getPlateUnit() === 'kg' ? val / LB_TO_KG : val;
-    }
+    if (Number.isFinite(val) && val > 0) setBarWeight(val);
   }
   saveToCloud();
 }
 
-function calcPlatesForWeight(targetLbs, barLbs, inventoryPairs) {
-  // inventoryPairs[i] = number of PAIRS available for plate size i
-  const sideWeightLbs = (targetLbs - barLbs) / 2;
-  if (sideWeightLbs < 0) return { possible: false, reason: 'Target is less than bar weight' };
-  if (sideWeightLbs === 0) return { possible: true, plates: [], totalLbs: barLbs };
+// ── Core greedy plate solver ─────────────────────────────────────────────────
+// Works entirely in the current unit. No lbs↔kg conversion inside.
+// inventoryTotal[i] = total plates of size i owned (both sides combined).
+// Returns: { exact: bool, plates: [{size, count}], total, rounded }
+function solvePlates(targetWeight, barWeight, inventoryTotal) {
+  const sizes = plateSizes();
+  const sideNeeded = (targetWeight - barWeight) / 2;
 
-  const result = [];
-  let remaining = sideWeightLbs;
-  const pairsUsed = new Array(PLATE_SIZES_LBS.length).fill(0);
+  if (sideNeeded < -0.001) {
+    return { error: `Target ${targetWeight} is lighter than the bar (${barWeight})` };
+  }
 
-  for (let i = 0; i < PLATE_SIZES_LBS.length; i++) {
-    const plateLbs = PLATE_SIZES_LBS[i];
-    const maxPairs = Math.floor(inventoryPairs[i] / 2); // pairs you can put on (need 2 for both sides)
-    if (plateLbs <= remaining + 0.001 && maxPairs > 0) {
-      const needed = Math.floor(remaining / plateLbs);
-      const used = Math.min(needed, maxPairs);
-      if (used > 0) {
-        result.push({ lb: plateLbs, count: used });
-        pairsUsed[i] = used;
-        remaining -= used * plateLbs;
-        remaining = Math.round(remaining * 100) / 100;
+  // Try exact match first, then round up by smallest plate increments
+  const smallestPlate = sizes[sizes.length - 1];
+
+  function tryTarget(side) {
+    const result = [];
+    let rem = Math.round(side * 1000) / 1000;
+    for (let i = 0; i < sizes.length; i++) {
+      const size = sizes[i];
+      // max pairs we can put on one side = floor(totalOwned / 2)
+      const maxOnSide = Math.floor((inventoryTotal[i] || 0) / 2);
+      if (size <= rem + 0.001 && maxOnSide > 0) {
+        const needed = Math.floor((rem + 0.001) / size);
+        const used = Math.min(needed, maxOnSide);
+        if (used > 0) {
+          result.push({ size, count: used });
+          rem = Math.round((rem - used * size) * 1000) / 1000;
+        }
       }
     }
+    return { plates: result, remaining: rem };
   }
 
-  if (remaining > 0.1) {
-    return { possible: false, reason: `Can't make up ${remaining.toFixed(1)} lbs with available plates` };
+  // Attempt exact
+  const exact = tryTarget(sideNeeded);
+  if (exact.remaining < 0.001) {
+    const total = Math.round((barWeight + exact.plates.reduce((s, p) => s + p.size * p.count * 2, 0)) * 1000) / 1000;
+    return { exact: true, plates: exact.plates, total };
   }
-  const total = barLbs + result.reduce((s, p) => s + p.lb * p.count * 2, 0);
-  return { possible: true, plates: result, totalLbs: Math.round(total * 10) / 10 };
+
+  // Round UP: find next achievable weight above target
+  // Increment by smallest plate size on each side until we find a combo
+  let bump = smallestPlate;
+  for (let attempt = 0; attempt < 40; attempt++) {
+    const higherSide = sideNeeded + bump;
+    const trial = tryTarget(higherSide);
+    if (trial.remaining < 0.001) {
+      const total = Math.round((barWeight + trial.plates.reduce((s, p) => s + p.size * p.count * 2, 0)) * 1000) / 1000;
+      return { exact: false, rounded: true, plates: trial.plates, total, requested: targetWeight };
+    }
+    bump += smallestPlate;
+  }
+
+  return { error: `Not enough plates to load anywhere near ${targetWeight} ${getPlateUnit()}` };
 }
 
 function buildPlateVisual(platesPerSide) {
   const unit = getPlateUnit();
-  if (!platesPerSide.length) return '<div style="text-align:center;color:var(--muted);font-size:13px;padding:8px 0;">Just the bar</div>';
-
-  const leftStack = [...platesPerSide].reverse().map(p => {
-    const h = PLATE_HEIGHTS[p.lb] || 28;
-    const w = Math.max(12, Math.round(h * 0.38));
-    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
-    return Array(p.count).fill(0).map(() =>
-      `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.lb]};writing-mode:vertical-rl;text-orientation:mixed;">${display}</div>`
-    ).join('');
-  }).join('');
-
-  const rightStack = platesPerSide.map(p => {
-    const h = PLATE_HEIGHTS[p.lb] || 28;
-    const w = Math.max(12, Math.round(h * 0.38));
-    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
-    return Array(p.count).fill(0).map(() =>
-      `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.lb]};writing-mode:vertical-rl;text-orientation:mixed;">${display}</div>`
-    ).join('');
-  }).join('');
-
+  if (!platesPerSide.length) {
+    return '<div style="text-align:center;color:var(--muted);font-size:13px;padding:8px 0;">Just the bar</div>';
+  }
+  function makeStack(plates, reverse) {
+    const ordered = reverse ? [...plates].reverse() : plates;
+    return ordered.map(p => {
+      const h = PLATE_HEIGHTS[p.size] || 28;
+      const w = Math.max(12, Math.round(h * 0.38));
+      return Array(p.count).fill(0).map(() =>
+        `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.size]};writing-mode:vertical-rl;text-orientation:mixed;">${p.size}</div>`
+      ).join('');
+    }).join('');
+  }
   return `<div class="plate-diagram">
     <div class="bar-visual">
       <div class="bar-sleeve"></div>
-      <div class="plate-stack">${leftStack}</div>
+      <div class="plate-stack">${makeStack(platesPerSide, true)}</div>
       <div class="bar-center"></div>
-      <div class="plate-stack">${rightStack}</div>
+      <div class="plate-stack">${makeStack(platesPerSide, false)}</div>
       <div class="bar-sleeve"></div>
+    </div>
+  </div>`;
+}
+
+function renderPlateCard(title, calc, unit) {
+  if (calc.error) {
+    return `<div class="plate-result" style="margin-bottom:10px;">
+      <div class="plate-result-title">${title}</div>
+      <div class="plate-impossible">${calc.error}. Add more plates in your inventory above.</div>
+    </div>`;
+  }
+  const perSideList = calc.plates.map(p => `${p.count}× ${p.size}${unit}`).join(', ') || 'bar only';
+  const roundedBanner = !calc.exact ? `
+    <div style="background:var(--amber-dim);border:1px solid rgba(183,121,31,.2);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px;color:var(--amber);">
+      You don't have the exact combination for ${calc.requested}${unit} — loaded up to <strong>${calc.total}${unit}</strong> instead (nearest achievable weight).
+    </div>` : '';
+
+  return `<div class="plate-result" style="margin-bottom:10px;">
+    <div class="plate-result-title">${title}</div>
+    ${roundedBanner}
+    ${buildPlateVisual(calc.plates)}
+    <div class="plate-result-row">
+      <div><div class="plate-result-ex">Per side</div><div class="plate-result-detail">${perSideList}</div></div>
+      <div class="plate-result-badge">${perSideList}</div>
+    </div>
+    <div class="plate-result-row">
+      <div><div class="plate-result-ex">Total on bar</div></div>
+      <div class="plate-result-badge">${calc.total}${unit}</div>
+    </div>
+    <div class="plate-result-row">
+      <div><div class="plate-result-ex">Bar</div></div>
+      <div class="plate-result-badge">${getBarWeight()}${unit}</div>
     </div>
   </div>`;
 }
 
 function calcAllPlates() {
   const inv = getPlateInventory();
-  const barLbs = getBarWeightLbs();
+  const bar = getBarWeight();
   const wts = currentWeights();
   const exercises = getWorkoutPlan();
   const unit = getPlateUnit();
-
-  const results = exercises.map(ex => {
-    const workKg = wts[ex.key];
-    const workLbs = workKg * KG_TO_LB;
-    const targetLbs = unit === 'kg' ? workKg / LB_TO_KG : workLbs;
-    // always calc in lbs internally
-    const targetLbsActual = workKg * KG_TO_LB;
-    const calc = calcPlatesForWeight(targetLbsActual, barLbs, inv);
-    return { ex, workKg, calc };
-  });
-
   const container = document.getElementById('plate-results');
   if (!container) return;
 
-  container.innerHTML = results.map(({ ex, workKg, calc }) => {
-    if (!calc.possible) {
-      return `<div class="plate-result" style="margin-bottom:10px;">
-        <div class="plate-result-title">${ex.name}</div>
-        <div class="plate-impossible">Can't load ${formatWeight(workKg)} with your plates — ${calc.reason}.</div>
-      </div>`;
-    }
-    const perSideList = calc.plates.map(p => {
-      const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
-      return `${p.count}× ${display}${unit}`;
-    }).join(', ') || 'none';
-    const barDisplay = unit === 'kg' ? Math.round(barLbs * LB_TO_KG * 10) / 10 : barLbs;
-
-    return `<div class="plate-result" style="margin-bottom:10px;">
-      <div class="plate-result-title">${ex.name} — ${formatWeight(workKg)}</div>
-      ${buildPlateVisual(calc.plates)}
-      <div class="plate-result-row">
-        <div><div class="plate-result-ex">Per side</div><div class="plate-result-detail">${perSideList || 'bar only'}</div></div>
-        <div class="plate-result-badge">${perSideList}</div>
-      </div>
-      <div class="plate-result-row">
-        <div><div class="plate-result-ex">Bar</div></div>
-        <div class="plate-result-badge">${barDisplay}${unit}</div>
-      </div>
-    </div>`;
+  container.innerHTML = exercises.map(ex => {
+    // Convert work weight to display unit
+    const workInUnit = unit === 'kg' ? wts[ex.key] : wts[ex.key] * KG_TO_LB;
+    // Round to nearest achievable increment (2× smallest plate) for clean targets
+    const sizes = plateSizes();
+    const step = sizes[sizes.length - 1] * 2;
+    const target = Math.round(workInUnit / step) * step;
+    const calc = solvePlates(target, bar, inv);
+    return renderPlateCard(`${ex.name} — ${formatWeight(wts[ex.key])}`, calc, unit);
   }).join('');
 }
 
@@ -2156,39 +2194,11 @@ function calcCustomPlates() {
   if (!input || !container) return;
   const val = parseFloat(input.value);
   if (!Number.isFinite(val) || val <= 0) { container.innerHTML = ''; return; }
-
   const unit = getPlateUnit();
+  const bar = getBarWeight();
   const inv = getPlateInventory();
-  const barLbs = getBarWeightLbs();
-  const targetLbs = unit === 'kg' ? val / LB_TO_KG : val;
-  const calc = calcPlatesForWeight(targetLbs, barLbs, inv);
-
-  if (!calc.possible) {
-    container.innerHTML = `<div class="plate-impossible">${calc.reason}. Try adjusting your plate inventory in the settings above.</div>`;
-    return;
-  }
-
-  const perSideList = calc.plates.map(p => {
-    const display = unit === 'kg' ? Math.round(p.lb * LB_TO_KG * 10) / 10 : p.lb;
-    return `${p.count}× ${display}${unit}`;
-  }).join(', ') || 'none';
-
-  const actualDisplay = unit === 'kg'
-    ? Math.round(calc.totalLbs * LB_TO_KG * 10) / 10 + ' kg'
-    : calc.totalLbs + ' lbs';
-
-  container.innerHTML = `<div class="plate-result">
-    <div class="plate-result-title">${val}${unit} load</div>
-    ${buildPlateVisual(calc.plates)}
-    <div class="plate-result-row">
-      <div><div class="plate-result-ex">Per side</div></div>
-      <div class="plate-result-badge">${perSideList || 'bar only'}</div>
-    </div>
-    <div class="plate-result-row">
-      <div><div class="plate-result-ex">Actual total</div><div class="plate-result-detail">Closest achievable weight</div></div>
-      <div class="plate-result-badge">${actualDisplay}</div>
-    </div>
-  </div>`;
+  const calc = solvePlates(val, bar, inv);
+  container.innerHTML = renderPlateCard(`${val} ${unit} load`, calc, unit);
 }
 
 // ── UTILS ─────────────────────────────────────────────────────────────────────
