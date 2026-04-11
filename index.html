@@ -231,39 +231,70 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 .plate-result-badge{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--red);}
 .plate-impossible{background:#fff8f0;border:1px solid rgba(183,121,31,.2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--amber);margin-top:4px;}
 /* ── Drum roller picker ────────────────────────────────────────── */
-.drum-wrap{position:relative;display:flex;align-items:center;gap:0;}
+/*
+ * GEOMETRY: viewport = 5 × ITEM_H = 220px. Center slot = rows[2].
+ * track translateY = -(selectedIdx × ITEM_H) + (2 × ITEM_H)
+ * so that row[selectedIdx] lands at the center slot.
+ * Fades top/bottom 2 rows with gradient masks.
+ * Red selection lines are border-box inset to the center slot.
+ */
+:root { --drum-item-h: 44px; }
+.drum-field{margin-bottom:14px;}
+.drum-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;font-family:var(--font-body);}
+.drum-wrap{display:flex;align-items:center;gap:0;}
 .drum-roller{
-  flex:1;height:44px;overflow:hidden;position:relative;
-  background:var(--bg3);border:1px solid var(--border);border-radius:14px;
-  cursor:ns-resize;user-select:none;touch-action:none;
+  flex:1;
+  height:calc(var(--drum-item-h) * 5);  /* show 5 rows */
+  overflow:hidden;
+  position:relative;
+  background:var(--bg3);
+  border:1px solid var(--border);
+  border-radius:14px;
+  cursor:grab;
+  user-select:none;
+  touch-action:none;
 }
-.drum-roller::before,.drum-roller::after{
-  content:'';position:absolute;left:0;right:0;height:14px;z-index:2;pointer-events:none;
+.drum-roller:active{cursor:grabbing;}
+/* top & bottom fade */
+.drum-roller::before,
+.drum-roller::after{
+  content:'';
+  position:absolute;left:0;right:0;
+  height:calc(var(--drum-item-h) * 2);
+  z-index:3;pointer-events:none;
 }
-.drum-roller::before{top:0;background:linear-gradient(to bottom,var(--bg3),transparent);}
-.drum-roller::after{bottom:0;background:linear-gradient(to top,var(--bg3),transparent);}
+.drum-roller::before{top:0;background:linear-gradient(to bottom,var(--bg3) 10%,transparent);}
+.drum-roller::after{bottom:0;background:linear-gradient(to top,var(--bg3) 10%,transparent);}
+/* selection band */
+.drum-selector{
+  position:absolute;
+  top:calc(var(--drum-item-h) * 2);
+  height:var(--drum-item-h);
+  left:0;right:0;
+  border-top:2px solid var(--purple);
+  border-bottom:2px solid var(--purple);
+  pointer-events:none;
+  z-index:2;
+}
 .drum-track{
-  position:absolute;top:0;left:0;right:0;
-  display:flex;flex-direction:column;align-items:center;
-  transition:transform .15s cubic-bezier(.25,.46,.45,.94);
+  position:absolute;
+  top:0;left:0;right:0;
+  display:flex;flex-direction:column;
   will-change:transform;
 }
 .drum-item{
-  height:44px;line-height:44px;font-family:var(--font-display);
-  font-size:22px;font-weight:700;color:var(--hint);white-space:nowrap;
-  text-align:center;width:100%;flex-shrink:0;
-  transition:color .1s,font-size .1s;
+  height:var(--drum-item-h);
+  display:flex;align-items:center;justify-content:center;
+  font-family:var(--font-display);
+  font-size:20px;font-weight:700;
+  color:var(--hint);
+  flex-shrink:0;
+  transition:color .12s, font-size .12s, opacity .12s;
+  opacity:.45;
 }
-.drum-item.selected{color:var(--text);font-size:24px;}
-.drum-selector{
-  position:absolute;top:0;left:0;right:0;bottom:0;
-  border-top:2px solid var(--purple);border-bottom:2px solid var(--purple);
-  top:50%;transform:translateY(-50%);
-  height:44px;border-radius:0;pointer-events:none;z-index:1;
-}
-.drum-unit{font-size:13px;color:var(--muted);padding:0 8px;white-space:nowrap;font-weight:500;}
-.drum-field{margin-bottom:14px;}
-.drum-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;font-family:var(--font-body);}
+.drum-item.near{opacity:.8;font-size:21px;}
+.drum-item.selected{color:var(--text);font-size:24px;opacity:1;}
+.drum-unit{font-size:13px;color:var(--muted);padding:0 10px;white-space:nowrap;font-weight:500;}
 
 
 
@@ -2278,12 +2309,10 @@ function calcCustomPlates() {
 
 // ── DRUM ROLLER PICKER ────────────────────────────────────────────────────────
 //
-// FIXED: startIdx captured at dragstart so subsequent drags don't drift.
-// Hidden inputs always store in kg (or lbs for bar/custom).
-// drumGetValue converts to display unit on read.
-// drumSetValue converts back to storage unit on write.
-// rebuildDrumsForUnit rebuilds all drums after unit changes, correctly
-// reading from kg storage and displaying in new unit.
+// Geometry: viewport shows 5 items. Selected item is always in the center (slot 2).
+// track.translateY = -(selectedIdx * ITEM_H) + OFFSET
+// where OFFSET = 2 * ITEM_H pushes the first item down into the center.
+// Ghost items pad start/end so any item can reach center.
 
 const DRUM_FIELDS = [
   ['drum-s-bw',          's-bw'],
@@ -2297,57 +2326,60 @@ const DRUM_FIELDS = [
   ['drum-custom-weight', 'custom-weight'],
 ];
 
-// Fields whose hidden input stores value in kg (converted on display)
+// Fields whose hidden input stores in kg; display converts to current unit
 const WEIGHT_FIELDS_KG = new Set(['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw']);
 
+const ITEM_H = 44; // must match --drum-item-h CSS var
+const VISIBLE = 5; // rows shown
+const CENTER = 2;  // index of center row (0-based)
+
 function drumConfig(inputId) {
-  const unit = getUnit();
-  const isLbs = unit === 'lbs';
+  const isLbs = getUnit() === 'lbs';
   const configs = {
-    'sw-squat':      { min: isLbs ? 45  : 20, max: isLbs ? 500 : 225, step: isLbs ? 5   : 2.5, default: isLbs ? 135 : 60 },
-    'sw-bench':      { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, default: isLbs ? 95  : 40 },
-    'sw-dead':       { min: isLbs ? 45  : 20, max: isLbs ? 600 : 270, step: isLbs ? 5   : 2.5, default: isLbs ? 175 : 80 },
-    'sw-ohp':        { min: isLbs ? 45  : 20, max: isLbs ? 300 : 135, step: isLbs ? 5   : 2.5, default: isLbs ? 65  : 30 },
-    'sw-row':        { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, default: isLbs ? 95  : 40 },
-    's-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, default: isLbs ? 185 : 85 },
-    'c-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, default: isLbs ? 185 : 85 },
-    'bar-weight':    { min: isLbs ? 15  : 5,  max: isLbs ? 65  : 30,  step: isLbs ? 5   : 2.5, default: isLbs ? 45  : 20 },
-    'custom-weight': { min: isLbs ? 45  : 20, max: isLbs ? 800 : 360, step: isLbs ? 5   : 2.5, default: isLbs ? 135 : 60 },
+    'sw-squat':      { min: isLbs ? 45  : 20, max: isLbs ? 500 : 225, step: isLbs ? 5   : 2.5, def: isLbs ? 135 : 60  },
+    'sw-bench':      { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, def: isLbs ? 95  : 40  },
+    'sw-dead':       { min: isLbs ? 45  : 20, max: isLbs ? 600 : 270, step: isLbs ? 5   : 2.5, def: isLbs ? 175 : 80  },
+    'sw-ohp':        { min: isLbs ? 45  : 20, max: isLbs ? 300 : 135, step: isLbs ? 5   : 2.5, def: isLbs ? 65  : 30  },
+    'sw-row':        { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, def: isLbs ? 95  : 40  },
+    's-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, def: isLbs ? 185 : 85  },
+    'c-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, def: isLbs ? 185 : 85  },
+    'bar-weight':    { min: isLbs ? 15  : 5,  max: isLbs ? 65  : 30,  step: isLbs ? 5   : 2.5, def: isLbs ? 45  : 20  },
+    'custom-weight': { min: isLbs ? 45  : 20, max: isLbs ? 800 : 360, step: isLbs ? 5   : 2.5, def: isLbs ? 135 : 60  },
   };
-  return configs[inputId] || { min: 0, max: 500, step: 5, default: 100 };
+  return configs[inputId] || { min: 0, max: 500, step: 5, def: 100 };
 }
 
 function drumValues(inputId) {
   const { min, max, step } = drumConfig(inputId);
   const vals = [];
-  for (let v = min; v <= max + 0.0001; v = Math.round((v + step) * 10000) / 10000) vals.push(v);
+  for (let v = min; v <= max + 1e-6; v = Math.round((v + step) * 1e6) / 1e6) vals.push(v);
   return vals;
 }
 
-// Read display-unit value from hidden input
+// Read current value in DISPLAY unit from hidden input
 function drumGetValue(inputId) {
   const hidden = document.getElementById(inputId);
   const raw = parseFloat(hidden?.value);
-  if (!Number.isFinite(raw) || raw <= 0) return drumConfig(inputId).default;
-  const displayVal = WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs'
-    ? raw * KG_TO_LB
-    : raw;
+  const { def } = drumConfig(inputId);
+  if (!Number.isFinite(raw) || raw <= 0) return def;
+  const isKgField = WEIGHT_FIELDS_KG.has(inputId);
+  const displayVal = (isKgField && getUnit() === 'lbs') ? raw * KG_TO_LB : raw;
   const { step } = drumConfig(inputId);
   return Math.round(displayVal / step) * step;
 }
 
-// Write display-unit value back to hidden input (converts to kg for weight fields)
-function drumSetValue(inputId, val, triggerCallback) {
+// Write display-unit value back to hidden input; trigger callbacks
+function drumSetValue(inputId, val, fire) {
   const hidden = document.getElementById(inputId);
   if (hidden) {
-    const storeVal = WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs'
-      ? Math.round(val * LB_TO_KG * 10000) / 10000
-      : val;
-    hidden.value = storeVal;
+    const isKgField = WEIGHT_FIELDS_KG.has(inputId);
+    const store = (isKgField && getUnit() === 'lbs') ? Math.round(val * LB_TO_KG * 1e4) / 1e4 : val;
+    hidden.value = store;
   }
-  if (!triggerCallback) return;
+  if (!fire) return;
   if (WEIGHT_FIELDS_KG.has(inputId) && inputId.startsWith('sw-')) autosaveWeights();
   else if (inputId === 's-bw') autosaveProfile();
+  else if (inputId === 'c-bw') { /* checkin saved manually */ }
   else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
   else if (inputId === 'custom-weight') calcCustomPlates();
 }
@@ -2355,138 +2387,126 @@ function drumSetValue(inputId, val, triggerCallback) {
 function buildDrum(rollerId, inputId) {
   const roller = document.getElementById(rollerId);
   if (!roller) return;
-  roller.innerHTML = '';
 
   const vals = drumValues(inputId);
-  const currentVal = drumGetValue(inputId);
+  const currentDisplay = drumGetValue(inputId);
 
-  // Find closest index
-  let currentIdx = 0;
+  // Find closest index to current value
+  let initIdx = 0;
   let minDiff = Infinity;
-  vals.forEach((v, i) => {
-    const d = Math.abs(v - currentVal);
-    if (d < minDiff) { minDiff = d; currentIdx = i; }
-  });
+  vals.forEach((v, i) => { const d = Math.abs(v - currentDisplay); if (d < minDiff) { minDiff = d; initIdx = i; } });
 
-  // Build track
+  // Build DOM
+  roller.innerHTML = '';
+  const selector = document.createElement('div');
+  selector.className = 'drum-selector';
+  roller.appendChild(selector);
+
   const track = document.createElement('div');
   track.className = 'drum-track';
 
-  // Ghost padding top so first item can scroll to center
-  const ghost = () => {
-    const d = document.createElement('div');
-    d.className = 'drum-item';
-    d.style.opacity = '0';
-    d.style.pointerEvents = 'none';
-    d.textContent = '—';
-    return d;
-  };
-  track.appendChild(ghost());
-
-  vals.forEach((v, i) => {
-    const item = document.createElement('div');
-    item.className = 'drum-item' + (i === currentIdx ? ' selected' : '');
-    item.textContent = v % 1 === 0 ? String(v) : v.toFixed(1);
-    track.appendChild(item);
+  // Pad CENTER ghost items at top so index 0 can sit in center
+  for (let g = 0; g < CENTER; g++) {
+    const ghost = document.createElement('div');
+    ghost.className = 'drum-item';
+    ghost.setAttribute('aria-hidden', 'true');
+    track.appendChild(ghost);
+  }
+  // Real items
+  vals.forEach(v => {
+    const el = document.createElement('div');
+    el.className = 'drum-item';
+    el.textContent = v % 1 === 0 ? String(v) : v.toFixed(v < 10 ? 2 : 1);
+    track.appendChild(el);
   });
-
-  track.appendChild(ghost());
-
-  const selector = document.createElement('div');
-  selector.className = 'drum-selector';
-
+  // Pad CENTER ghost items at bottom so last index can sit in center
+  for (let g = 0; g < CENTER; g++) {
+    const ghost = document.createElement('div');
+    ghost.className = 'drum-item';
+    ghost.setAttribute('aria-hidden', 'true');
+    track.appendChild(ghost);
+  }
   roller.appendChild(track);
-  roller.appendChild(selector);
 
-  const ITEM_H = 44;
+  // realItems[i] maps to vals[i] — offset by CENTER ghosts
+  function itemEl(idx) { return track.children[idx + CENTER]; }
 
-  // ── Drag state (closure) ───────────────────────────────────────
-  let dragActive = false;
-  let dragStartY = 0;
-  let dragStartIdx = currentIdx;  // anchor — captured at touchstart/mousedown
-  let lastDeltaY = 0;             // for momentum
-  let prevY = 0;
-  let committedIdx = currentIdx;  // last snapped index
+  let committedIdx = initIdx;
+
+  // translateY so that vals[idx] lands in the center slot
+  // Center slot top = CENTER * ITEM_H
+  // Item top when at 0 translateY = (idx + CENTER) * ITEM_H  [accounting for top ghosts]
+  // We want item top = CENTER * ITEM_H, so:
+  // translateY = -(idx * ITEM_H)
+  function yForIdx(idx) { return -(idx * ITEM_H); }
+
+  function updateHighlights(snapIdx) {
+    const n = vals.length;
+    for (let i = 0; i < n; i++) {
+      const el = itemEl(i);
+      if (!el) continue;
+      const dist = Math.abs(i - snapIdx);
+      el.className = 'drum-item' + (dist === 0 ? ' selected' : dist === 1 ? ' near' : '');
+    }
+  }
 
   function snapTo(idx, animate) {
     idx = Math.max(0, Math.min(vals.length - 1, idx));
     committedIdx = idx;
-    const offset = -(idx * ITEM_H);
-    track.style.transition = animate
-      ? 'transform .22s cubic-bezier(.17,.67,.35,1)'
-      : 'none';
-    track.style.transform = `translateY(${offset}px)`;
-    // Update highlights
-    Array.from(track.children).forEach((el, i) => {
-      el.classList.toggle('selected', i - 1 === idx); // i=0 is ghost
-    });
-    drumSetValue(inputId, vals[idx], true);
+    track.style.transition = animate ? 'transform .22s cubic-bezier(.17,.67,.35,1)' : 'none';
+    track.style.transform = `translateY(${yForIdx(idx)}px)`;
+    updateHighlights(idx);
+    drumSetValue(inputId, vals[idx], animate); // only fire callbacks on snap, not during drag
   }
 
-  function onStart(clientY) {
-    dragActive = true;
-    dragStartY = clientY;
-    dragStartIdx = committedIdx;   // ← KEY FIX: anchor to current committed pos
-    prevY = clientY;
-    lastDeltaY = 0;
+  // ── Drag handling ────────────────────────────────────────────────
+  let dragging = false;
+  let startY = 0;
+  let startIdx = 0;
+  let lastY = 0;
+  let velocity = 0; // items/frame
+
+  function onStart(y) {
+    dragging = true;
+    startY = y;
+    lastY = y;
+    startIdx = committedIdx;
+    velocity = 0;
     track.style.transition = 'none';
   }
 
-  function onMove(clientY) {
-    if (!dragActive) return;
-    const totalDelta = clientY - dragStartY;
-    lastDeltaY = clientY - prevY;
-    prevY = clientY;
-    // How many items did we drag through?
-    const rawIdx = dragStartIdx - totalDelta / ITEM_H;
-    const clamped = Math.max(0, Math.min(vals.length - 1, rawIdx));
-    track.style.transform = `translateY(${-(clamped * ITEM_H)}px)`;
-    // Live highlight
-    const nearIdx = Math.round(clamped);
-    Array.from(track.children).forEach((el, i) => {
-      el.classList.toggle('selected', i - 1 === nearIdx);
-    });
+  function onMove(y) {
+    if (!dragging) return;
+    velocity = (lastY - y) / ITEM_H; // positive = scrolling down (index increases)
+    lastY = y;
+    const delta = (startY - y) / ITEM_H;
+    const floatIdx = Math.max(0, Math.min(vals.length - 1, startIdx + delta));
+    track.style.transform = `translateY(${yForIdx(floatIdx)}px)`;
+    updateHighlights(Math.round(floatIdx));
   }
 
-  function onEnd(clientY) {
-    if (!dragActive) return;
-    dragActive = false;
-    const totalDelta = clientY - dragStartY;
-    let rawIdx = dragStartIdx - totalDelta / ITEM_H;
-    // Momentum: carry velocity (~3 items worth at most)
-    const momentum = Math.max(-3, Math.min(3, -lastDeltaY / ITEM_H * 4));
-    rawIdx += momentum;
-    snapTo(Math.round(rawIdx), true);
+  function onEnd(y) {
+    if (!dragging) return;
+    dragging = false;
+    const delta = (startY - y) / ITEM_H;
+    const momentum = Math.max(-4, Math.min(4, velocity * 6));
+    const target = Math.round(startIdx + delta + momentum);
+    snapTo(target, true);
   }
 
-  // Touch events
-  roller.addEventListener('touchstart', e => {
-    onStart(e.touches[0].clientY);
-    e.preventDefault();
-  }, { passive: false });
+  // Touch
+  roller.addEventListener('touchstart', e => { onStart(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+  roller.addEventListener('touchmove',  e => { onMove(e.touches[0].clientY);  e.preventDefault(); }, { passive: false });
+  roller.addEventListener('touchend',   e => { onEnd(e.changedTouches[0].clientY); }, { passive: true });
 
-  roller.addEventListener('touchmove', e => {
-    onMove(e.touches[0].clientY);
-    e.preventDefault();
-  }, { passive: false });
-
-  roller.addEventListener('touchend', e => {
-    onEnd(e.changedTouches[0].clientY);
-  }, { passive: true });
-
-  // Mouse events — attach move/up to window to handle fast drags
+  // Mouse
   roller.addEventListener('mousedown', e => {
     onStart(e.clientY);
     e.preventDefault();
-
-    const onMouseMove = ev => onMove(ev.clientY);
-    const onMouseUp   = ev => {
-      onEnd(ev.clientY);
-      window.removeEventListener('mousemove', onMouseMove);
-      window.removeEventListener('mouseup', onMouseUp);
-    };
-    window.addEventListener('mousemove', onMouseMove);
-    window.addEventListener('mouseup', onMouseUp);
+    const move = ev => onMove(ev.clientY);
+    const up   = ev => { onEnd(ev.clientY); window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
+    window.addEventListener('mousemove', move);
+    window.addEventListener('mouseup', up);
   });
 
   // Scroll wheel — one tick per notch
@@ -2495,30 +2515,16 @@ function buildDrum(rollerId, inputId) {
     snapTo(committedIdx + Math.sign(e.deltaY), true);
   }, { passive: false });
 
-  // Tap single item to jump
-  roller.addEventListener('click', e => {
-    const rect = roller.getBoundingClientRect();
-    const relY = e.clientY - rect.top;
-    const center = rect.height / 2;
-    if (Math.abs(relY - center) < 10) return; // already centered
-    const dir = relY < center ? -1 : 1;
-    snapTo(committedIdx + dir, true);
-  });
-
-  // Initial position — no animation
-  snapTo(currentIdx, false);
+  // Initial render — no animation
+  snapTo(initIdx, false);
 }
 
 function buildAllDrums() {
   DRUM_FIELDS.forEach(([rollerId, inputId]) => buildDrum(rollerId, inputId));
 }
 
-// Called whenever unit changes — rebuilds all drums with correct ranges
-// Hidden inputs stay in kg; drumGetValue converts to new unit automatically
 function rebuildDrumsForUnit() {
   const unit = getUnit();
-
-  // Update unit label spans
   DRUM_FIELDS.forEach(([, inputId]) => {
     const span = document.getElementById(inputId + '-unit');
     if (span) span.textContent = unit;
@@ -2527,9 +2533,6 @@ function rebuildDrumsForUnit() {
   if (barLbl) barLbl.textContent = unit;
   const customLbl = document.getElementById('custom-unit-label');
   if (customLbl) customLbl.textContent = unit;
-
-  // Rebuild every drum — drumGetValue will read kg from hidden input
-  // and convert to new unit, so the drum centers on the correct value
   buildAllDrums();
 }
 
