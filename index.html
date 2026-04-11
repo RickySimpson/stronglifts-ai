@@ -202,11 +202,11 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
 /* ── Plate calculator ──────────────────────────────────────────── */
-.plate-input-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:10px;margin-bottom:14px;}
-.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;}
+.plate-input-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;}
+.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;min-width:0;overflow:hidden;}
 .plate-label{font-size:14px;font-weight:600;color:var(--text);}
 .plate-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.plate-counter{display:flex;align-items:center;gap:10px;}
+.plate-counter{display:flex;align-items:center;gap:10px;flex-shrink:0;}
 .plate-count{font-family:var(--font-display);font-size:22px;font-weight:700;min-width:28px;text-align:center;color:var(--text);}
 .plate-btn{width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);line-height:1;transition:background .1s;}
 .plate-btn:hover{background:var(--purple-dim);color:var(--purple);}
@@ -230,6 +230,41 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 .plate-result-detail{color:var(--muted);font-size:12px;margin-top:2px;}
 .plate-result-badge{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--red);}
 .plate-impossible{background:#fff8f0;border:1px solid rgba(183,121,31,.2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--amber);margin-top:4px;}
+/* ── Drum roller picker ────────────────────────────────────────── */
+.drum-wrap{position:relative;display:flex;align-items:center;gap:0;}
+.drum-roller{
+  flex:1;height:44px;overflow:hidden;position:relative;
+  background:var(--bg3);border:1px solid var(--border);border-radius:14px;
+  cursor:ns-resize;user-select:none;touch-action:none;
+}
+.drum-roller::before,.drum-roller::after{
+  content:'';position:absolute;left:0;right:0;height:14px;z-index:2;pointer-events:none;
+}
+.drum-roller::before{top:0;background:linear-gradient(to bottom,var(--bg3),transparent);}
+.drum-roller::after{bottom:0;background:linear-gradient(to top,var(--bg3),transparent);}
+.drum-track{
+  position:absolute;top:0;left:0;right:0;
+  display:flex;flex-direction:column;align-items:center;
+  transition:transform .15s cubic-bezier(.25,.46,.45,.94);
+  will-change:transform;
+}
+.drum-item{
+  height:44px;line-height:44px;font-family:var(--font-display);
+  font-size:22px;font-weight:700;color:var(--hint);white-space:nowrap;
+  text-align:center;width:100%;flex-shrink:0;
+  transition:color .1s,font-size .1s;
+}
+.drum-item.selected{color:var(--text);font-size:24px;}
+.drum-selector{
+  position:absolute;top:0;left:0;right:0;bottom:0;
+  border-top:2px solid var(--purple);border-bottom:2px solid var(--purple);
+  top:50%;transform:translateY(-50%);
+  height:44px;border-radius:0;pointer-events:none;z-index:1;
+}
+.drum-unit{font-size:13px;color:var(--muted);padding:0 8px;white-space:nowrap;font-weight:500;}
+.drum-field{margin-bottom:14px;}
+.drum-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;font-family:var(--font-body);}
+
 
 
 /* ── UI polish overrides ─────────────────────────────────────── */
@@ -812,7 +847,11 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
         <div class="card-title">Daily recovery check-in</div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Sleep (hrs)</label><input type="number" id="c-sleep" min="0" max="12" step="0.5" placeholder="e.g. 7.5"></div>
-          <div class="form-group"><label class="form-label" id="bw-label">Body weight (kg)</label><input type="number" id="c-bw" min="40" max="220" step="0.1" placeholder="optional"></div>
+          <div class="form-group">
+            <label class="form-label" id="bw-label">Body weight (kg)</label>
+            <div class="drum-wrap"><div class="drum-roller" id="drum-c-bw" data-id="c-bw"></div><span class="drum-unit" id="c-bw-unit">kg</span></div>
+            <input type="hidden" id="c-bw" value="">
+          </div>
         </div>
         <div class="form-row">
           <div class="form-group"><label class="form-label">Stress (1-5)</label><select id="c-stress"><option value="1">1 - low</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5 - high</option></select></div>
@@ -862,10 +901,13 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
       <div class="card">
         <div class="card-title">Your plate inventory</div>
         <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Tell us what plates you own — the calculator uses this to tell you exactly what to load.</p>
-        <div class="bar-weight-row">
-          <label>Bar weight</label>
-          <input type="number" id="bar-weight" value="45" min="0" step="1" oninput="savePlates();calcAllPlates()">
-          <span style="font-size:13px;color:var(--muted);" id="bar-unit-label">lbs</span>
+        <div class="bar-weight-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
+          <label style="font-size:13px;color:var(--muted);">Bar weight</label>
+          <div class="drum-wrap" style="width:100%;">
+            <div class="drum-roller" id="drum-bar-weight" data-id="bar-weight"></div>
+            <span class="drum-unit" id="bar-unit-label">lbs</span>
+          </div>
+          <input type="hidden" id="bar-weight" value="45">
         </div>
         <div class="plate-input-grid" id="plate-inputs"></div>
         <p style="font-size:12px;color:var(--muted);margin-top:4px;">Counts are total plates you own (both sides use half each).</p>
@@ -879,9 +921,13 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
 
       <div class="card">
         <div class="card-title">Custom calculator</div>
-        <div style="display:flex;gap:10px;align-items:center;margin-bottom:12px;flex-wrap:wrap;">
-          <input type="number" id="custom-weight" placeholder="Target weight" step="5" style="flex:1;min-width:120px;" oninput="calcCustomPlates()">
-          <span style="font-size:13px;color:var(--muted);" id="custom-unit-label">lbs</span>
+        <div style="margin-bottom:12px;">
+          <label class="drum-label">Target weight</label>
+          <div class="drum-wrap">
+            <div class="drum-roller" id="drum-custom-weight" data-id="custom-weight"></div>
+            <span class="drum-unit" id="custom-unit-label">lbs</span>
+          </div>
+          <input type="hidden" id="custom-weight" value="0">
         </div>
         <div id="custom-result"></div>
       </div>
@@ -891,14 +937,22 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
     <div id="sec-settings" class="section">
       <div class="card">
         <div class="card-title">Your profile</div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Body weight (kg)</label>
-            <input type="number" id="s-bw" value="85" min="40" max="200">
+        <div class="form-group">
+          <label class="form-label" id="bw-drum-label">Body weight (kg)</label>
+          <div class="drum-wrap">
+            <div class="drum-roller" id="drum-s-bw" data-id="s-bw"></div>
+            <span class="drum-unit" id="s-bw-unit">kg</span>
           </div>
+          <input type="hidden" id="s-bw" value="85">
+        </div>
+        <div class="form-row">
           <div class="form-group">
             <label class="form-label">Training days/week</label>
             <select id="s-days"><option>2</option><option selected>3</option><option>4</option></select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Units</label>
+            <select id="s-units"><option value="kg">KG</option><option value="lbs">LBS</option></select>
           </div>
         </div>
         <div class="form-row">
@@ -910,10 +964,6 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
             <label class="form-label">Training age</label>
             <select id="s-age"><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option></select>
           </div>
-        </div>
-                <div class="form-group">
-          <label class="form-label">Units</label>
-          <select id="s-units"><option value="kg">KG</option><option value="lbs">LBS</option></select>
         </div>
         <button class="btn btn-primary" onclick="saveSettings()">Save profile</button>
       </div>
@@ -929,15 +979,35 @@ html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(-
       <div class="card">
         <div class="card-title" id="starting-weights-title">Starting weights (kg)</div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Squat</label><input type="number" id="sw-squat" placeholder="e.g. 60" step="2.5"></div>
-          <div class="form-group"><label class="form-label">Bench press</label><input type="number" id="sw-bench" placeholder="e.g. 40" step="2.5"></div>
+          <div class="drum-field">
+            <label class="drum-label">Squat</label>
+            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-squat" data-id="sw-squat"></div><span class="drum-unit" id="sw-squat-unit">kg</span></div>
+            <input type="hidden" id="sw-squat" value="60">
+          </div>
+          <div class="drum-field">
+            <label class="drum-label">Bench press</label>
+            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-bench" data-id="sw-bench"></div><span class="drum-unit" id="sw-bench-unit">kg</span></div>
+            <input type="hidden" id="sw-bench" value="40">
+          </div>
         </div>
         <div class="form-row">
-          <div class="form-group"><label class="form-label">Deadlift</label><input type="number" id="sw-dead" placeholder="e.g. 80" step="2.5"></div>
-          <div class="form-group"><label class="form-label">Overhead press</label><input type="number" id="sw-ohp" placeholder="e.g. 30" step="2.5"></div>
+          <div class="drum-field">
+            <label class="drum-label">Deadlift</label>
+            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-dead" data-id="sw-dead"></div><span class="drum-unit" id="sw-dead-unit">kg</span></div>
+            <input type="hidden" id="sw-dead" value="80">
+          </div>
+          <div class="drum-field">
+            <label class="drum-label">Overhead press</label>
+            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-ohp" data-id="sw-ohp"></div><span class="drum-unit" id="sw-ohp-unit">kg</span></div>
+            <input type="hidden" id="sw-ohp" value="30">
+          </div>
         </div>
-        <div class="form-group"><label class="form-label">Barbell row</label><input type="number" id="sw-row" placeholder="e.g. 40" step="2.5" style="width:50%;"></div>
-        <button class="btn btn-primary" onclick="saveWeights()">Save weights</button>
+        <div class="drum-field" style="max-width:50%;">
+          <label class="drum-label">Barbell row</label>
+          <div class="drum-wrap"><div class="drum-roller" id="drum-sw-row" data-id="sw-row"></div><span class="drum-unit" id="sw-row-unit">kg</span></div>
+          <input type="hidden" id="sw-row" value="40">
+        </div>
+        <button class="btn btn-primary" style="margin-top:14px;" onclick="saveWeights()">Save weights</button>
       </div>
 
       <div class="card" style="margin-top:8px;">
@@ -1157,6 +1227,9 @@ function updateUnitLabels() {
     const input = document.getElementById(id);
     if (input) input.step = unit === 'lbs' ? '5' : '2.5';
   });
+  // Auto-convert displayed values when unit changes
+  populateSettings();
+  rebuildDrumsForUnit();
 }
 
 
@@ -2201,6 +2274,221 @@ function calcCustomPlates() {
   container.innerHTML = renderPlateCard(`${val} ${unit} load`, calc, unit);
 }
 
+
+// ── DRUM ROLLER PICKER ────────────────────────────────────────────────────────
+//
+// A touch-friendly scrolling drum/slot-machine picker.
+// Each roller is configured with a range and step.
+// State is synced to a hidden <input> with the same data-id.
+
+const drumState = {}; // keyed by inputId
+
+function drumConfig(inputId) {
+  const unit = getUnit();
+  const isLbs = unit === 'lbs';
+  const configs = {
+    'sw-squat':      { min: isLbs ? 45 : 20,  max: isLbs ? 500 : 225, step: isLbs ? 5 : 2.5, default: isLbs ? 135 : 60 },
+    'sw-bench':      { min: isLbs ? 45 : 20,  max: isLbs ? 400 : 180, step: isLbs ? 5 : 2.5, default: isLbs ? 95  : 40 },
+    'sw-dead':       { min: isLbs ? 45 : 20,  max: isLbs ? 600 : 270, step: isLbs ? 5 : 2.5, default: isLbs ? 175 : 80 },
+    'sw-ohp':        { min: isLbs ? 45 : 20,  max: isLbs ? 300 : 135, step: isLbs ? 5 : 2.5, default: isLbs ? 65  : 30 },
+    'sw-row':        { min: isLbs ? 45 : 20,  max: isLbs ? 400 : 180, step: isLbs ? 5 : 2.5, default: isLbs ? 95  : 40 },
+    's-bw':          { min: isLbs ? 88 : 40,  max: isLbs ? 440 : 200, step: isLbs ? 1  : 0.5, default: isLbs ? 185 : 85 },
+    'c-bw':          { min: isLbs ? 88 : 40,  max: isLbs ? 440 : 200, step: isLbs ? 1  : 0.5, default: isLbs ? 185 : 85 },
+    'bar-weight':    { min: isLbs ? 15 : 5,   max: isLbs ? 65 : 30,   step: isLbs ? 5  : 2.5, default: isLbs ? 45  : 20 },
+    'custom-weight': { min: isLbs ? 45 : 20,  max: isLbs ? 800 : 360, step: isLbs ? 5  : 2.5, default: isLbs ? 135 : 60 },
+  };
+  return configs[inputId] || { min: 0, max: 500, step: 5, default: 100 };
+}
+
+function drumValues(inputId) {
+  const { min, max, step } = drumConfig(inputId);
+  const vals = [];
+  for (let v = min; v <= max + 0.0001; v = Math.round((v + step) * 1000) / 1000) vals.push(v);
+  return vals;
+}
+
+function drumGetValue(inputId) {
+  const hidden = document.getElementById(inputId);
+  const parsed = parseFloat(hidden?.value);
+  if (!Number.isFinite(parsed) || parsed <= 0) return drumConfig(inputId).default;
+  // Weight fields store in kg; convert to current unit for display
+  const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw'];
+  if (weightFields.includes(inputId)) {
+    const inUnit = getUnit() === 'lbs' ? parsed * KG_TO_LB : parsed;
+    // Snap to nearest step in range
+    const { step } = drumConfig(inputId);
+    return Math.round(inUnit / step) * step;
+  }
+  return parsed;
+}
+
+function drumSetValue(inputId, val, triggerCallback) {
+  const hidden = document.getElementById(inputId);
+  if (hidden) {
+    // Weight fields: store in kg internally
+    const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw'];
+    if (weightFields.includes(inputId) && getUnit() === 'lbs') {
+      hidden.value = Math.round(val * LB_TO_KG * 1000) / 1000;
+    } else {
+      hidden.value = val;
+    }
+  }
+  if (triggerCallback) {
+    // fire appropriate autosave
+    if (['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].includes(inputId)) autosaveWeights();
+    else if (inputId === 's-bw') autosaveProfile();
+    else if (inputId === 'c-bw') { /* handled in checkin */ }
+    else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
+    else if (inputId === 'custom-weight') calcCustomPlates();
+  }
+}
+
+function buildDrum(rollerId, inputId) {
+  const roller = document.getElementById(rollerId);
+  if (!roller) return;
+  roller.innerHTML = '';
+
+  const vals = drumValues(inputId);
+  const currentVal = drumGetValue(inputId);
+  let currentIdx = vals.findIndex(v => Math.abs(v - currentVal) < 0.001);
+  if (currentIdx < 0) currentIdx = Math.max(0, Math.floor(vals.length / 2));
+
+  const track = document.createElement('div');
+  track.className = 'drum-track';
+
+  // padding items top and bottom so selected item centers
+  const padItem = () => { const d = document.createElement('div'); d.className='drum-item'; d.style.opacity='0'; d.textContent='0'; return d; };
+  track.appendChild(padItem());
+
+  vals.forEach((v, i) => {
+    const item = document.createElement('div');
+    item.className = 'drum-item' + (i === currentIdx ? ' selected' : '');
+    item.textContent = v % 1 === 0 ? v : v.toFixed(1);
+    track.appendChild(item);
+  });
+
+  track.appendChild(padItem());
+
+  const selector = document.createElement('div');
+  selector.className = 'drum-selector';
+  roller.appendChild(track);
+  roller.appendChild(selector);
+
+  const ITEM_H = 44;
+  let state = { idx: currentIdx, startY: 0, lastY: 0, velocity: 0, raf: null, dragging: false };
+
+  function setIndex(idx, animate) {
+    idx = Math.max(0, Math.min(vals.length - 1, Math.round(idx)));
+    state.idx = idx;
+    const offset = -idx * ITEM_H;
+    if (!animate) track.style.transition = 'none';
+    else track.style.transition = 'transform .18s cubic-bezier(.25,.46,.45,.94)';
+    track.style.transform = `translateY(${offset}px)`;
+    track.querySelectorAll('.drum-item').forEach((el, i) => {
+      // i=0 is pad, items start at i=1
+      el.classList.toggle('selected', i - 1 === idx);
+    });
+    drumSetValue(inputId, vals[idx], true);
+  }
+
+  function startDrag(y) {
+    state.dragging = true;
+    state.startY = y;
+    state.lastY = y;
+    state.velocity = 0;
+    track.style.transition = 'none';
+    if (state.raf) cancelAnimationFrame(state.raf);
+  }
+
+  function moveDrag(y) {
+    if (!state.dragging) return;
+    const dy = y - state.lastY;
+    state.velocity = dy;
+    state.lastY = y;
+    const totalDelta = y - state.startY;
+    const rawIdx = state.idx - totalDelta / ITEM_H;
+    const clamped = Math.max(0, Math.min(vals.length - 1, rawIdx));
+    const offset = -clamped * ITEM_H;
+    track.style.transform = `translateY(${offset}px)`;
+    // update selected highlight during drag
+    const nearIdx = Math.round(clamped);
+    track.querySelectorAll('.drum-item').forEach((el, i) => { el.classList.toggle('selected', i - 1 === nearIdx); });
+  }
+
+  function endDrag(y) {
+    if (!state.dragging) return;
+    state.dragging = false;
+    const totalDelta = y - state.startY;
+    let targetIdx = state.idx - totalDelta / ITEM_H;
+    // momentum
+    targetIdx -= state.velocity * 2;
+    setIndex(Math.round(targetIdx), true);
+  }
+
+  // Touch
+  roller.addEventListener('touchstart', e => { startDrag(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+  roller.addEventListener('touchmove',  e => { moveDrag(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
+  roller.addEventListener('touchend',   e => { endDrag(e.changedTouches[0].clientY); }, { passive: true });
+
+  // Mouse
+  roller.addEventListener('mousedown', e => { startDrag(e.clientY); e.preventDefault(); });
+  window.addEventListener('mousemove', e => { if (state.dragging) moveDrag(e.clientY); });
+  window.addEventListener('mouseup',   e => { if (state.dragging) endDrag(e.clientY); });
+
+  // Scroll wheel
+  roller.addEventListener('wheel', e => {
+    e.preventDefault();
+    const delta = Math.sign(e.deltaY);
+    setIndex(state.idx + delta, true);
+  }, { passive: false });
+
+  // Initial position (no animation)
+  setIndex(currentIdx, false);
+}
+
+const DRUM_FIELDS = [
+  ['drum-s-bw',          's-bw'],
+  ['drum-sw-squat',      'sw-squat'],
+  ['drum-sw-bench',      'sw-bench'],
+  ['drum-sw-dead',       'sw-dead'],
+  ['drum-sw-ohp',        'sw-ohp'],
+  ['drum-sw-row',        'sw-row'],
+  ['drum-c-bw',          'c-bw'],
+  ['drum-bar-weight',    'bar-weight'],
+  ['drum-custom-weight', 'custom-weight'],
+];
+
+function buildAllDrums() {
+  DRUM_FIELDS.forEach(([rollerId, inputId]) => buildDrum(rollerId, inputId));
+}
+
+function rebuildDrumsForUnit() {
+  // Rebuild with new unit ranges; convert current value before rebuild
+  const unit = getUnit();
+  const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'];
+
+  weightFields.forEach(id => {
+    const hidden = document.getElementById(id);
+    if (!hidden) return;
+    const kgVal = parseFloat(hidden.value);
+    if (!Number.isFinite(kgVal)) return;
+    // hidden inputs always store in kg; drum displays in current unit
+    // so just rebuild — drumGetValue reads from hidden which stays in kg
+    // and drumConfig will return unit-appropriate range
+  });
+
+  // Update unit labels next to drums
+  const unit2 = getUnit();
+  DRUM_FIELDS.forEach(([rollerId, inputId]) => {
+    const unitSpan = document.getElementById(inputId + '-unit');
+    if (unitSpan) unitSpan.textContent = unit2;
+  });
+  document.getElementById('bar-unit-label').textContent = unit2;
+  document.getElementById('custom-unit-label').textContent = unit2;
+
+  buildAllDrums();
+}
+
 // ── UTILS ─────────────────────────────────────────────────────────────────────
 function showToast(msg) {
   const t = document.getElementById('toast');
@@ -2232,6 +2520,7 @@ function bindAutosave() {
   bindAutosave();
   buildPlateInputs();
   calcAllPlates();
+  buildAllDrums();
 })();
 </script>
 </body>
