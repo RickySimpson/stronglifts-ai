@@ -2429,10 +2429,18 @@ function calcCustomPlates() {
 
 // ── DRUM ROLLER PICKER ────────────────────────────────────────────────────────
 //
-// Geometry: viewport shows 5 items. Selected item is always in the center (slot 2).
-// track.translateY = -(selectedIdx * ITEM_H) + OFFSET
-// where OFFSET = 2 * ITEM_H pushes the first item down into the center.
-// Ghost items pad start/end so any item can reach center.
+// VIRTUAL SCROLLING — only 11 DOM nodes per drum regardless of range size.
+// The track holds POOL_SIZE tile divs. As the user scrolls, we recycle them:
+// each tile's textContent and position is updated to show the correct value.
+// This means a 0.5-step body-weight drum (352 values) costs the same as a
+// 5-step bar-weight drum (10 values) — no crash, no lag.
+//
+// Coordinate system:
+//   "logical" offset = selectedIndex * ITEM_H  (how far we've scrolled in value-space)
+//   Each tile i covers logical range [i*ITEM_H .. (i+1)*ITEM_H)
+//   Tile absolute top  = tileRow * ITEM_H  where tileRow wraps via modulo
+//   CSS: position:absolute; top = tileRow * ITEM_H; transform = translateY(-offset)
+//   Center of viewport = ITEM_H * CENTER  pixels from top of roller
 
 const DRUM_FIELDS = [
   ['drum-s-bw',          's-bw'],
@@ -2446,60 +2454,69 @@ const DRUM_FIELDS = [
   ['drum-custom-weight', 'custom-weight'],
 ];
 
-// Fields whose hidden input stores in kg; display converts to current unit
 const WEIGHT_FIELDS_KG = new Set(['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw']);
-
-const ITEM_H = 44; // must match --drum-item-h CSS var
-const VISIBLE = 5; // rows shown
-const CENTER = 2;  // index of center row (0-based)
+const ITEM_H   = 44;   // px per item — matches --drum-item-h
+const VISIBLE  = 5;    // items visible in viewport
+const CENTER   = 2;    // center slot index (0-based)
+const POOL_SIZE = 11;  // tile pool — enough to fill viewport + buffer each side
 
 function drumConfig(inputId) {
   const isLbs = getUnit() === 'lbs';
-  const configs = {
-    'sw-squat':      { min: isLbs ? 45  : 20, max: isLbs ? 500 : 225, step: isLbs ? 5   : 2.5, def: isLbs ? 135 : 60  },
-    'sw-bench':      { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, def: isLbs ? 95  : 40  },
-    'sw-dead':       { min: isLbs ? 45  : 20, max: isLbs ? 600 : 270, step: isLbs ? 5   : 2.5, def: isLbs ? 175 : 80  },
-    'sw-ohp':        { min: isLbs ? 45  : 20, max: isLbs ? 300 : 135, step: isLbs ? 5   : 2.5, def: isLbs ? 65  : 30  },
-    'sw-row':        { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, def: isLbs ? 95  : 40  },
-    's-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, def: isLbs ? 185 : 85  },
-    'c-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, def: isLbs ? 185 : 85  },
-    'bar-weight':    { min: isLbs ? 15  : 5,  max: isLbs ? 65  : 30,  step: isLbs ? 5   : 2.5, def: isLbs ? 45  : 20  },
-    'custom-weight': { min: isLbs ? 45  : 20, max: isLbs ? 800 : 360, step: isLbs ? 5   : 2.5, def: isLbs ? 135 : 60  },
+  const C = {
+    'sw-squat':      { min: isLbs?45:20,  max: isLbs?500:225, step: isLbs?5:2.5,  def: isLbs?135:60  },
+    'sw-bench':      { min: isLbs?45:20,  max: isLbs?400:180, step: isLbs?5:2.5,  def: isLbs?95:40   },
+    'sw-dead':       { min: isLbs?45:20,  max: isLbs?600:270, step: isLbs?5:2.5,  def: isLbs?175:80  },
+    'sw-ohp':        { min: isLbs?45:20,  max: isLbs?300:135, step: isLbs?5:2.5,  def: isLbs?65:30   },
+    'sw-row':        { min: isLbs?45:20,  max: isLbs?400:180, step: isLbs?5:2.5,  def: isLbs?95:40   },
+    's-bw':          { min: isLbs?88:40,  max: isLbs?440:200, step: isLbs?2:0.5,  def: isLbs?185:85  },
+    'c-bw':          { min: isLbs?88:40,  max: isLbs?440:200, step: isLbs?2:0.5,  def: isLbs?185:85  },
+    'bar-weight':    { min: isLbs?15:5,   max: isLbs?65:30,   step: isLbs?5:2.5,  def: isLbs?45:20   },
+    'custom-weight': { min: isLbs?45:20,  max: isLbs?800:360, step: isLbs?5:2.5,  def: isLbs?135:60  },
   };
-  return configs[inputId] || { min: 0, max: 500, step: 5, def: 100 };
+  return C[inputId] || { min:0, max:500, step:5, def:100 };
 }
 
-function drumValues(inputId) {
+// Total number of steps for this field
+function drumCount(inputId) {
   const { min, max, step } = drumConfig(inputId);
-  const vals = [];
-  for (let v = min; v <= max + 1e-6; v = Math.round((v + step) * 1e6) / 1e6) vals.push(v);
-  return vals;
+  return Math.round((max - min) / step) + 1;
 }
 
-// Read current value in DISPLAY unit from hidden input
+// Value at index i (clamped)
+function drumValAt(inputId, i) {
+  const { min, max, step } = drumConfig(inputId);
+  const count = Math.round((max - min) / step) + 1;
+  const clamped = Math.max(0, Math.min(count - 1, i));
+  const v = min + clamped * step;
+  return Math.round(v * 1e6) / 1e6;
+}
+
+function drumFormat(v) {
+  if (v % 1 === 0) return String(v);
+  if (Math.abs(v * 10 % 1) < 0.001) return v.toFixed(1);
+  return v.toFixed(2);
+}
+
 function drumGetValue(inputId) {
   const hidden = document.getElementById(inputId);
   const raw = parseFloat(hidden?.value);
-  const { def } = drumConfig(inputId);
+  const { def, step } = drumConfig(inputId);
   if (!Number.isFinite(raw) || raw <= 0) return def;
-  const isKgField = WEIGHT_FIELDS_KG.has(inputId);
-  const displayVal = (isKgField && getUnit() === 'lbs') ? raw * KG_TO_LB : raw;
-  const { step } = drumConfig(inputId);
+  const displayVal = (WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs') ? raw * KG_TO_LB : raw;
   return Math.round(displayVal / step) * step;
 }
 
-// Write display-unit value back to hidden input; trigger callbacks
 function drumSetValue(inputId, val, fire) {
   const hidden = document.getElementById(inputId);
   if (hidden) {
-    const isKgField = WEIGHT_FIELDS_KG.has(inputId);
-    const store = (isKgField && getUnit() === 'lbs') ? Math.round(val * LB_TO_KG * 1e4) / 1e4 : val;
+    const store = (WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs')
+      ? Math.round(val * LB_TO_KG * 1e4) / 1e4 : val;
     hidden.value = store;
   }
   if (!fire) return;
   if (WEIGHT_FIELDS_KG.has(inputId) && inputId.startsWith('sw-')) autosaveWeights();
   else if (inputId === 's-bw') autosaveProfile();
-  else if (inputId === 'c-bw') { /* checkin saved manually */ }
+  else if (inputId === 'c-bw') {}
   else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
   else if (inputId === 'custom-weight') calcCustomPlates();
 }
@@ -2508,147 +2525,183 @@ function buildDrum(rollerId, inputId) {
   const roller = document.getElementById(rollerId);
   if (!roller) return;
 
-  const vals = drumValues(inputId);
+  // Destroy any previous instance cleanly
+  roller._drumDestroy?.();
+
+  const count = drumCount(inputId);
   const currentDisplay = drumGetValue(inputId);
+  const { min, step } = drumConfig(inputId);
 
-  // Find closest index to current value
-  let initIdx = 0;
-  let minDiff = Infinity;
-  vals.forEach((v, i) => { const d = Math.abs(v - currentDisplay); if (d < minDiff) { minDiff = d; initIdx = i; } });
+  // Find initial index
+  let initIdx = Math.round((currentDisplay - min) / step);
+  initIdx = Math.max(0, Math.min(count - 1, initIdx));
 
-  // Build DOM
+  // ── Build minimal DOM ─────────────────────────────────────────────────────
   roller.innerHTML = '';
-  const selector = document.createElement('div');
-  selector.className = 'drum-selector';
-  roller.appendChild(selector);
+  roller.style.position = 'relative';
 
-  const track = document.createElement('div');
-  track.className = 'drum-track';
+  // Selection band (purely decorative, pointer-events:none)
+  const sel = document.createElement('div');
+  sel.className = 'drum-selector';
+  roller.appendChild(sel);
 
-  // Pad CENTER ghost items at top so index 0 can sit in center
-  for (let g = 0; g < CENTER; g++) {
-    const ghost = document.createElement('div');
-    ghost.className = 'drum-item';
-    ghost.setAttribute('aria-hidden', 'true');
-    track.appendChild(ghost);
-  }
-  // Real items
-  vals.forEach(v => {
+  // Top + bottom fades (::before/::after handled in CSS, but we need overflow:hidden)
+  // Create the pool of recycled tile divs
+  const tiles = [];
+  for (let t = 0; t < POOL_SIZE; t++) {
     const el = document.createElement('div');
     el.className = 'drum-item';
-    el.textContent = v % 1 === 0 ? String(v) : v.toFixed(v < 10 ? 2 : 1);
-    track.appendChild(el);
-  });
-  // Pad CENTER ghost items at bottom so last index can sit in center
-  for (let g = 0; g < CENTER; g++) {
-    const ghost = document.createElement('div');
-    ghost.className = 'drum-item';
-    ghost.setAttribute('aria-hidden', 'true');
-    track.appendChild(ghost);
+    el.style.position = 'absolute';
+    el.style.left = '0'; el.style.right = '0';
+    el.style.height = ITEM_H + 'px';
+    el.style.display = 'flex';
+    el.style.alignItems = 'center';
+    el.style.justifyContent = 'center';
+    roller.appendChild(el);
+    tiles.push(el);
   }
-  roller.appendChild(track);
 
-  // realItems[i] maps to vals[i] — offset by CENTER ghosts
-  function itemEl(idx) { return track.children[idx + CENTER]; }
+  // Fades rendered via pseudo-elements — add real divs on top for z-index safety
+  const fadeTop = document.createElement('div');
+  fadeTop.style.cssText = `position:absolute;top:0;left:0;right:0;height:${ITEM_H*2}px;background:linear-gradient(to bottom,var(--bg3) 10%,transparent);pointer-events:none;z-index:3;`;
+  const fadeBot = document.createElement('div');
+  fadeBot.style.cssText = `position:absolute;bottom:0;left:0;right:0;height:${ITEM_H*2}px;background:linear-gradient(to top,var(--bg3) 10%,transparent);pointer-events:none;z-index:3;`;
+  roller.appendChild(fadeTop);
+  roller.appendChild(fadeBot);
+
+  // ── Virtual rendering ──────────────────────────────────────────────────────
+  // "scrollTop" in pixel terms = selectedIdx * ITEM_H
+  // Viewport center at CENTER * ITEM_H from top of roller.
+  // Tile t shows value at index: firstVisibleIdx + t
+  // where firstVisibleIdx = selectedIdx - CENTER  (so selected lands at center)
+
+  let currentIdx = initIdx;
+  let lastRenderedFirst = null;
+
+  function renderTiles(idx) {
+    // The first value-index we need to show
+    const firstIdx = idx - CENTER - Math.floor((POOL_SIZE - VISIBLE) / 2);
+
+    if (firstIdx === lastRenderedFirst) return; // nothing changed
+    lastRenderedFirst = firstIdx;
+
+    tiles.forEach((tile, t) => {
+      const valueIdx = firstIdx + t;
+      const clamped = Math.max(0, Math.min(count - 1, valueIdx));
+      const v = drumValAt(inputId, clamped);
+      const isEmpty = valueIdx < 0 || valueIdx >= count;
+
+      tile.textContent = isEmpty ? '' : drumFormat(v);
+
+      // Position: tile t sits at (firstIdx + t) * ITEM_H relative to scroll origin
+      // But we translate the whole roller by -idx*ITEM_H + CENTER*ITEM_H
+      // so tile absolute top = (firstIdx + t) * ITEM_H
+      tile.style.top = ((firstIdx + t) * ITEM_H) + 'px';
+
+      const dist = Math.abs(valueIdx - idx);
+      tile.className = 'drum-item' +
+        (isEmpty ? ' ghost' : dist === 0 ? ' selected' : dist === 1 ? ' near' : '');
+    });
+  }
+
+  // Translate roller content so that idx lands in center slot
+  // Center slot top = CENTER * ITEM_H from roller top
+  // Item at idx has top = idx * ITEM_H (in tile coordinate space)
+  // To bring it to center: translateY = CENTER*ITEM_H - idx*ITEM_H = (CENTER-idx)*ITEM_H
+  // But tiles are position:absolute inside roller (no track wrapper needed)
+  // We translate the roller's inner content by applying transform to a single wrapper
+  const inner = document.createElement('div');
+  inner.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;will-change:transform;';
+  // Move all tiles into inner wrapper
+  tiles.forEach(t => inner.appendChild(t));
+  roller.insertBefore(inner, sel.nextSibling);
+
+  function setTranslate(idx, animate) {
+    const y = (CENTER - idx) * ITEM_H;
+    inner.style.transition = animate ? 'transform .2s cubic-bezier(.17,.67,.35,1)' : 'none';
+    inner.style.transform = `translateY(${y}px)`;
+  }
 
   let committedIdx = initIdx;
 
-  // translateY so that vals[idx] lands in the center slot
-  // Center slot top = CENTER * ITEM_H
-  // Item top when at 0 translateY = (idx + CENTER) * ITEM_H  [accounting for top ghosts]
-  // We want item top = CENTER * ITEM_H, so:
-  // translateY = -(idx * ITEM_H)
-  function yForIdx(idx) { return -(idx * ITEM_H); }
-
-  function updateHighlights(snapIdx) {
-    const n = vals.length;
-    for (let i = 0; i < n; i++) {
-      const el = itemEl(i);
-      if (!el) continue;
-      const dist = Math.abs(i - snapIdx);
-      el.className = 'drum-item' + (dist === 0 ? ' selected' : dist === 1 ? ' near' : '');
-    }
-  }
-
-  function snapTo(idx, animate) {
-    idx = Math.max(0, Math.min(vals.length - 1, idx));
+  function snapTo(rawIdx, animate) {
+    const idx = Math.max(0, Math.min(count - 1, Math.round(rawIdx)));
     const changed = idx !== committedIdx;
     committedIdx = idx;
-    track.style.transition = animate ? 'transform .22s cubic-bezier(.17,.67,.35,1)' : 'none';
-    track.style.transform = `translateY(${yForIdx(idx)}px)`;
-    updateHighlights(idx);
+    currentIdx = idx;
+    setTranslate(idx, animate);
+    renderTiles(idx);
     if (animate && changed) Haptic.tick();
-    drumSetValue(inputId, vals[idx], animate); // only fire callbacks on snap, not during drag
+    drumSetValue(inputId, drumValAt(inputId, idx), animate);
   }
 
-  // ── Drag handling ────────────────────────────────────────────────
-  let dragging = false;
-  let startY = 0;
-  let startIdx = 0;
-  let lastY = 0;
-  let velocity = 0; // items/frame
+  // Initial render
+  renderTiles(initIdx);
+  setTranslate(initIdx, false);
+
+  // ── Input handling ─────────────────────────────────────────────────────────
+  let dragging = false, startY = 0, startIdx = 0, lastY = 0, vel = 0;
 
   function onStart(y) {
-    dragging = true;
-    startY = y;
-    lastY = y;
-    startIdx = committedIdx;
-    velocity = 0;
-    track.style.transition = 'none';
+    dragging = true; startY = y; lastY = y;
+    startIdx = committedIdx; vel = 0;
+    inner.style.transition = 'none';
   }
 
   function onMove(y) {
     if (!dragging) return;
-    velocity = (lastY - y) / ITEM_H; // positive = scrolling down (index increases)
+    vel = (lastY - y) / ITEM_H;
     lastY = y;
-    const delta = (startY - y) / ITEM_H;
-    const floatIdx = Math.max(0, Math.min(vals.length - 1, startIdx + delta));
-    track.style.transform = `translateY(${yForIdx(floatIdx)}px)`;
-    updateHighlights(Math.round(floatIdx));
+    const floatIdx = startIdx + (startY - y) / ITEM_H;
+    const clamped = Math.max(0, Math.min(count - 1, floatIdx));
+    setTranslate(clamped, false);
+    const nearIdx = Math.round(clamped);
+    if (nearIdx !== currentIdx) {
+      currentIdx = nearIdx;
+      renderTiles(nearIdx);
+    }
   }
 
   function onEnd(y) {
     if (!dragging) return;
     dragging = false;
-    const delta = (startY - y) / ITEM_H;
-    const momentum = Math.max(-4, Math.min(4, velocity * 6));
-    const target = Math.round(startIdx + delta + momentum);
-    snapTo(target, true);
+    const floatIdx = startIdx + (startY - y) / ITEM_H;
+    const momentum = Math.max(-5, Math.min(5, vel * 7));
+    snapTo(floatIdx + momentum, true);
   }
 
-  // Touch
-  roller.addEventListener('touchstart', e => { onStart(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
-  roller.addEventListener('touchmove',  e => { onMove(e.touches[0].clientY);  e.preventDefault(); }, { passive: false });
-  roller.addEventListener('touchend',   e => { onEnd(e.changedTouches[0].clientY); }, { passive: true });
+  const ac = new AbortController();
+  const sig = { signal: ac.signal };
 
-  // Mouse
+  roller.addEventListener('touchstart', e => { onStart(e.touches[0].clientY); e.preventDefault(); }, { passive:false, ...sig });
+  roller.addEventListener('touchmove',  e => { onMove(e.touches[0].clientY);  e.preventDefault(); }, { passive:false, ...sig });
+  roller.addEventListener('touchend',   e => { onEnd(e.changedTouches[0].clientY); },                { passive:true,  ...sig });
+
   roller.addEventListener('mousedown', e => {
-    onStart(e.clientY);
-    e.preventDefault();
+    onStart(e.clientY); e.preventDefault();
     const move = ev => onMove(ev.clientY);
     const up   = ev => { onEnd(ev.clientY); window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
     window.addEventListener('mousemove', move);
     window.addEventListener('mouseup', up);
-  });
+  }, sig);
 
-  // Scroll wheel — one tick per notch
   roller.addEventListener('wheel', e => {
     e.preventDefault();
     snapTo(committedIdx + Math.sign(e.deltaY), true);
-  }, { passive: false });
+  }, { passive:false, ...sig });
 
-  // Initial render — no animation
-  snapTo(initIdx, false);
+  // Expose destroy so rebuild can clean up listeners
+  roller._drumDestroy = () => { ac.abort(); roller._drumDestroy = null; };
 }
 
 function buildAllDrums() {
-  DRUM_FIELDS.forEach(([rollerId, inputId]) => buildDrum(rollerId, inputId));
+  DRUM_FIELDS.forEach(([rid, iid]) => buildDrum(rid, iid));
 }
 
 function rebuildDrumsForUnit() {
   const unit = getUnit();
-  DRUM_FIELDS.forEach(([, inputId]) => {
-    const span = document.getElementById(inputId + '-unit');
+  DRUM_FIELDS.forEach(([, iid]) => {
+    const span = document.getElementById(iid + '-unit');
     if (span) span.textContent = unit;
   });
   const barLbl = document.getElementById('bar-unit-label');
