@@ -202,11 +202,11 @@ select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(
 .toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
 .toast.show{opacity:1;}
 /* ── Plate calculator ──────────────────────────────────────────── */
-.plate-input-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;}
-.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;min-width:0;overflow:hidden;}
-.plate-label{font-size:14px;font-weight:600;color:var(--text);}
+.plate-input-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;width:100%;}
+.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;min-width:0;overflow:hidden;box-sizing:border-box;width:100%;}
+.plate-label{font-size:14px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;}
 .plate-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.plate-counter{display:flex;align-items:center;gap:10px;flex-shrink:0;}
+.plate-counter{display:flex;align-items:center;gap:8px;flex-shrink:0;}
 .plate-count{font-family:var(--font-display);font-size:22px;font-weight:700;min-width:28px;text-align:center;color:var(--text);}
 .plate-btn{width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);line-height:1;transition:background .1s;}
 .plate-btn:hover{background:var(--purple-dim);color:var(--purple);}
@@ -1977,8 +1977,9 @@ function saveWeights() {
 }
 function autosaveProfile() {
   captureProfileFromForm();
-  updateUnitLabels();
-  populateSettings();
+  updateUnitLabels();    // rebuilds drums + plate inputs for new unit
+  populateSettings();    // syncs form fields
+  rebuildDrumsForUnit(); // ensure drums show converted values
   renderToday();
   renderProgress();
   saveToCloud();
@@ -2277,174 +2278,12 @@ function calcCustomPlates() {
 
 // ── DRUM ROLLER PICKER ────────────────────────────────────────────────────────
 //
-// A touch-friendly scrolling drum/slot-machine picker.
-// Each roller is configured with a range and step.
-// State is synced to a hidden <input> with the same data-id.
-
-const drumState = {}; // keyed by inputId
-
-function drumConfig(inputId) {
-  const unit = getUnit();
-  const isLbs = unit === 'lbs';
-  const configs = {
-    'sw-squat':      { min: isLbs ? 45 : 20,  max: isLbs ? 500 : 225, step: isLbs ? 5 : 2.5, default: isLbs ? 135 : 60 },
-    'sw-bench':      { min: isLbs ? 45 : 20,  max: isLbs ? 400 : 180, step: isLbs ? 5 : 2.5, default: isLbs ? 95  : 40 },
-    'sw-dead':       { min: isLbs ? 45 : 20,  max: isLbs ? 600 : 270, step: isLbs ? 5 : 2.5, default: isLbs ? 175 : 80 },
-    'sw-ohp':        { min: isLbs ? 45 : 20,  max: isLbs ? 300 : 135, step: isLbs ? 5 : 2.5, default: isLbs ? 65  : 30 },
-    'sw-row':        { min: isLbs ? 45 : 20,  max: isLbs ? 400 : 180, step: isLbs ? 5 : 2.5, default: isLbs ? 95  : 40 },
-    's-bw':          { min: isLbs ? 88 : 40,  max: isLbs ? 440 : 200, step: isLbs ? 1  : 0.5, default: isLbs ? 185 : 85 },
-    'c-bw':          { min: isLbs ? 88 : 40,  max: isLbs ? 440 : 200, step: isLbs ? 1  : 0.5, default: isLbs ? 185 : 85 },
-    'bar-weight':    { min: isLbs ? 15 : 5,   max: isLbs ? 65 : 30,   step: isLbs ? 5  : 2.5, default: isLbs ? 45  : 20 },
-    'custom-weight': { min: isLbs ? 45 : 20,  max: isLbs ? 800 : 360, step: isLbs ? 5  : 2.5, default: isLbs ? 135 : 60 },
-  };
-  return configs[inputId] || { min: 0, max: 500, step: 5, default: 100 };
-}
-
-function drumValues(inputId) {
-  const { min, max, step } = drumConfig(inputId);
-  const vals = [];
-  for (let v = min; v <= max + 0.0001; v = Math.round((v + step) * 1000) / 1000) vals.push(v);
-  return vals;
-}
-
-function drumGetValue(inputId) {
-  const hidden = document.getElementById(inputId);
-  const parsed = parseFloat(hidden?.value);
-  if (!Number.isFinite(parsed) || parsed <= 0) return drumConfig(inputId).default;
-  // Weight fields store in kg; convert to current unit for display
-  const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw'];
-  if (weightFields.includes(inputId)) {
-    const inUnit = getUnit() === 'lbs' ? parsed * KG_TO_LB : parsed;
-    // Snap to nearest step in range
-    const { step } = drumConfig(inputId);
-    return Math.round(inUnit / step) * step;
-  }
-  return parsed;
-}
-
-function drumSetValue(inputId, val, triggerCallback) {
-  const hidden = document.getElementById(inputId);
-  if (hidden) {
-    // Weight fields: store in kg internally
-    const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw'];
-    if (weightFields.includes(inputId) && getUnit() === 'lbs') {
-      hidden.value = Math.round(val * LB_TO_KG * 1000) / 1000;
-    } else {
-      hidden.value = val;
-    }
-  }
-  if (triggerCallback) {
-    // fire appropriate autosave
-    if (['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].includes(inputId)) autosaveWeights();
-    else if (inputId === 's-bw') autosaveProfile();
-    else if (inputId === 'c-bw') { /* handled in checkin */ }
-    else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
-    else if (inputId === 'custom-weight') calcCustomPlates();
-  }
-}
-
-function buildDrum(rollerId, inputId) {
-  const roller = document.getElementById(rollerId);
-  if (!roller) return;
-  roller.innerHTML = '';
-
-  const vals = drumValues(inputId);
-  const currentVal = drumGetValue(inputId);
-  let currentIdx = vals.findIndex(v => Math.abs(v - currentVal) < 0.001);
-  if (currentIdx < 0) currentIdx = Math.max(0, Math.floor(vals.length / 2));
-
-  const track = document.createElement('div');
-  track.className = 'drum-track';
-
-  // padding items top and bottom so selected item centers
-  const padItem = () => { const d = document.createElement('div'); d.className='drum-item'; d.style.opacity='0'; d.textContent='0'; return d; };
-  track.appendChild(padItem());
-
-  vals.forEach((v, i) => {
-    const item = document.createElement('div');
-    item.className = 'drum-item' + (i === currentIdx ? ' selected' : '');
-    item.textContent = v % 1 === 0 ? v : v.toFixed(1);
-    track.appendChild(item);
-  });
-
-  track.appendChild(padItem());
-
-  const selector = document.createElement('div');
-  selector.className = 'drum-selector';
-  roller.appendChild(track);
-  roller.appendChild(selector);
-
-  const ITEM_H = 44;
-  let state = { idx: currentIdx, startY: 0, lastY: 0, velocity: 0, raf: null, dragging: false };
-
-  function setIndex(idx, animate) {
-    idx = Math.max(0, Math.min(vals.length - 1, Math.round(idx)));
-    state.idx = idx;
-    const offset = -idx * ITEM_H;
-    if (!animate) track.style.transition = 'none';
-    else track.style.transition = 'transform .18s cubic-bezier(.25,.46,.45,.94)';
-    track.style.transform = `translateY(${offset}px)`;
-    track.querySelectorAll('.drum-item').forEach((el, i) => {
-      // i=0 is pad, items start at i=1
-      el.classList.toggle('selected', i - 1 === idx);
-    });
-    drumSetValue(inputId, vals[idx], true);
-  }
-
-  function startDrag(y) {
-    state.dragging = true;
-    state.startY = y;
-    state.lastY = y;
-    state.velocity = 0;
-    track.style.transition = 'none';
-    if (state.raf) cancelAnimationFrame(state.raf);
-  }
-
-  function moveDrag(y) {
-    if (!state.dragging) return;
-    const dy = y - state.lastY;
-    state.velocity = dy;
-    state.lastY = y;
-    const totalDelta = y - state.startY;
-    const rawIdx = state.idx - totalDelta / ITEM_H;
-    const clamped = Math.max(0, Math.min(vals.length - 1, rawIdx));
-    const offset = -clamped * ITEM_H;
-    track.style.transform = `translateY(${offset}px)`;
-    // update selected highlight during drag
-    const nearIdx = Math.round(clamped);
-    track.querySelectorAll('.drum-item').forEach((el, i) => { el.classList.toggle('selected', i - 1 === nearIdx); });
-  }
-
-  function endDrag(y) {
-    if (!state.dragging) return;
-    state.dragging = false;
-    const totalDelta = y - state.startY;
-    let targetIdx = state.idx - totalDelta / ITEM_H;
-    // momentum
-    targetIdx -= state.velocity * 2;
-    setIndex(Math.round(targetIdx), true);
-  }
-
-  // Touch
-  roller.addEventListener('touchstart', e => { startDrag(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
-  roller.addEventListener('touchmove',  e => { moveDrag(e.touches[0].clientY); e.preventDefault(); }, { passive: false });
-  roller.addEventListener('touchend',   e => { endDrag(e.changedTouches[0].clientY); }, { passive: true });
-
-  // Mouse
-  roller.addEventListener('mousedown', e => { startDrag(e.clientY); e.preventDefault(); });
-  window.addEventListener('mousemove', e => { if (state.dragging) moveDrag(e.clientY); });
-  window.addEventListener('mouseup',   e => { if (state.dragging) endDrag(e.clientY); });
-
-  // Scroll wheel
-  roller.addEventListener('wheel', e => {
-    e.preventDefault();
-    const delta = Math.sign(e.deltaY);
-    setIndex(state.idx + delta, true);
-  }, { passive: false });
-
-  // Initial position (no animation)
-  setIndex(currentIdx, false);
-}
+// FIXED: startIdx captured at dragstart so subsequent drags don't drift.
+// Hidden inputs always store in kg (or lbs for bar/custom).
+// drumGetValue converts to display unit on read.
+// drumSetValue converts back to storage unit on write.
+// rebuildDrumsForUnit rebuilds all drums after unit changes, correctly
+// reading from kg storage and displaying in new unit.
 
 const DRUM_FIELDS = [
   ['drum-s-bw',          's-bw'],
@@ -2458,34 +2297,239 @@ const DRUM_FIELDS = [
   ['drum-custom-weight', 'custom-weight'],
 ];
 
+// Fields whose hidden input stores value in kg (converted on display)
+const WEIGHT_FIELDS_KG = new Set(['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw']);
+
+function drumConfig(inputId) {
+  const unit = getUnit();
+  const isLbs = unit === 'lbs';
+  const configs = {
+    'sw-squat':      { min: isLbs ? 45  : 20, max: isLbs ? 500 : 225, step: isLbs ? 5   : 2.5, default: isLbs ? 135 : 60 },
+    'sw-bench':      { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, default: isLbs ? 95  : 40 },
+    'sw-dead':       { min: isLbs ? 45  : 20, max: isLbs ? 600 : 270, step: isLbs ? 5   : 2.5, default: isLbs ? 175 : 80 },
+    'sw-ohp':        { min: isLbs ? 45  : 20, max: isLbs ? 300 : 135, step: isLbs ? 5   : 2.5, default: isLbs ? 65  : 30 },
+    'sw-row':        { min: isLbs ? 45  : 20, max: isLbs ? 400 : 180, step: isLbs ? 5   : 2.5, default: isLbs ? 95  : 40 },
+    's-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, default: isLbs ? 185 : 85 },
+    'c-bw':          { min: isLbs ? 88  : 40, max: isLbs ? 440 : 200, step: isLbs ? 1   : 0.5, default: isLbs ? 185 : 85 },
+    'bar-weight':    { min: isLbs ? 15  : 5,  max: isLbs ? 65  : 30,  step: isLbs ? 5   : 2.5, default: isLbs ? 45  : 20 },
+    'custom-weight': { min: isLbs ? 45  : 20, max: isLbs ? 800 : 360, step: isLbs ? 5   : 2.5, default: isLbs ? 135 : 60 },
+  };
+  return configs[inputId] || { min: 0, max: 500, step: 5, default: 100 };
+}
+
+function drumValues(inputId) {
+  const { min, max, step } = drumConfig(inputId);
+  const vals = [];
+  for (let v = min; v <= max + 0.0001; v = Math.round((v + step) * 10000) / 10000) vals.push(v);
+  return vals;
+}
+
+// Read display-unit value from hidden input
+function drumGetValue(inputId) {
+  const hidden = document.getElementById(inputId);
+  const raw = parseFloat(hidden?.value);
+  if (!Number.isFinite(raw) || raw <= 0) return drumConfig(inputId).default;
+  const displayVal = WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs'
+    ? raw * KG_TO_LB
+    : raw;
+  const { step } = drumConfig(inputId);
+  return Math.round(displayVal / step) * step;
+}
+
+// Write display-unit value back to hidden input (converts to kg for weight fields)
+function drumSetValue(inputId, val, triggerCallback) {
+  const hidden = document.getElementById(inputId);
+  if (hidden) {
+    const storeVal = WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs'
+      ? Math.round(val * LB_TO_KG * 10000) / 10000
+      : val;
+    hidden.value = storeVal;
+  }
+  if (!triggerCallback) return;
+  if (WEIGHT_FIELDS_KG.has(inputId) && inputId.startsWith('sw-')) autosaveWeights();
+  else if (inputId === 's-bw') autosaveProfile();
+  else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
+  else if (inputId === 'custom-weight') calcCustomPlates();
+}
+
+function buildDrum(rollerId, inputId) {
+  const roller = document.getElementById(rollerId);
+  if (!roller) return;
+  roller.innerHTML = '';
+
+  const vals = drumValues(inputId);
+  const currentVal = drumGetValue(inputId);
+
+  // Find closest index
+  let currentIdx = 0;
+  let minDiff = Infinity;
+  vals.forEach((v, i) => {
+    const d = Math.abs(v - currentVal);
+    if (d < minDiff) { minDiff = d; currentIdx = i; }
+  });
+
+  // Build track
+  const track = document.createElement('div');
+  track.className = 'drum-track';
+
+  // Ghost padding top so first item can scroll to center
+  const ghost = () => {
+    const d = document.createElement('div');
+    d.className = 'drum-item';
+    d.style.opacity = '0';
+    d.style.pointerEvents = 'none';
+    d.textContent = '—';
+    return d;
+  };
+  track.appendChild(ghost());
+
+  vals.forEach((v, i) => {
+    const item = document.createElement('div');
+    item.className = 'drum-item' + (i === currentIdx ? ' selected' : '');
+    item.textContent = v % 1 === 0 ? String(v) : v.toFixed(1);
+    track.appendChild(item);
+  });
+
+  track.appendChild(ghost());
+
+  const selector = document.createElement('div');
+  selector.className = 'drum-selector';
+
+  roller.appendChild(track);
+  roller.appendChild(selector);
+
+  const ITEM_H = 44;
+
+  // ── Drag state (closure) ───────────────────────────────────────
+  let dragActive = false;
+  let dragStartY = 0;
+  let dragStartIdx = currentIdx;  // anchor — captured at touchstart/mousedown
+  let lastDeltaY = 0;             // for momentum
+  let prevY = 0;
+  let committedIdx = currentIdx;  // last snapped index
+
+  function snapTo(idx, animate) {
+    idx = Math.max(0, Math.min(vals.length - 1, idx));
+    committedIdx = idx;
+    const offset = -(idx * ITEM_H);
+    track.style.transition = animate
+      ? 'transform .22s cubic-bezier(.17,.67,.35,1)'
+      : 'none';
+    track.style.transform = `translateY(${offset}px)`;
+    // Update highlights
+    Array.from(track.children).forEach((el, i) => {
+      el.classList.toggle('selected', i - 1 === idx); // i=0 is ghost
+    });
+    drumSetValue(inputId, vals[idx], true);
+  }
+
+  function onStart(clientY) {
+    dragActive = true;
+    dragStartY = clientY;
+    dragStartIdx = committedIdx;   // ← KEY FIX: anchor to current committed pos
+    prevY = clientY;
+    lastDeltaY = 0;
+    track.style.transition = 'none';
+  }
+
+  function onMove(clientY) {
+    if (!dragActive) return;
+    const totalDelta = clientY - dragStartY;
+    lastDeltaY = clientY - prevY;
+    prevY = clientY;
+    // How many items did we drag through?
+    const rawIdx = dragStartIdx - totalDelta / ITEM_H;
+    const clamped = Math.max(0, Math.min(vals.length - 1, rawIdx));
+    track.style.transform = `translateY(${-(clamped * ITEM_H)}px)`;
+    // Live highlight
+    const nearIdx = Math.round(clamped);
+    Array.from(track.children).forEach((el, i) => {
+      el.classList.toggle('selected', i - 1 === nearIdx);
+    });
+  }
+
+  function onEnd(clientY) {
+    if (!dragActive) return;
+    dragActive = false;
+    const totalDelta = clientY - dragStartY;
+    let rawIdx = dragStartIdx - totalDelta / ITEM_H;
+    // Momentum: carry velocity (~3 items worth at most)
+    const momentum = Math.max(-3, Math.min(3, -lastDeltaY / ITEM_H * 4));
+    rawIdx += momentum;
+    snapTo(Math.round(rawIdx), true);
+  }
+
+  // Touch events
+  roller.addEventListener('touchstart', e => {
+    onStart(e.touches[0].clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  roller.addEventListener('touchmove', e => {
+    onMove(e.touches[0].clientY);
+    e.preventDefault();
+  }, { passive: false });
+
+  roller.addEventListener('touchend', e => {
+    onEnd(e.changedTouches[0].clientY);
+  }, { passive: true });
+
+  // Mouse events — attach move/up to window to handle fast drags
+  roller.addEventListener('mousedown', e => {
+    onStart(e.clientY);
+    e.preventDefault();
+
+    const onMouseMove = ev => onMove(ev.clientY);
+    const onMouseUp   = ev => {
+      onEnd(ev.clientY);
+      window.removeEventListener('mousemove', onMouseMove);
+      window.removeEventListener('mouseup', onMouseUp);
+    };
+    window.addEventListener('mousemove', onMouseMove);
+    window.addEventListener('mouseup', onMouseUp);
+  });
+
+  // Scroll wheel — one tick per notch
+  roller.addEventListener('wheel', e => {
+    e.preventDefault();
+    snapTo(committedIdx + Math.sign(e.deltaY), true);
+  }, { passive: false });
+
+  // Tap single item to jump
+  roller.addEventListener('click', e => {
+    const rect = roller.getBoundingClientRect();
+    const relY = e.clientY - rect.top;
+    const center = rect.height / 2;
+    if (Math.abs(relY - center) < 10) return; // already centered
+    const dir = relY < center ? -1 : 1;
+    snapTo(committedIdx + dir, true);
+  });
+
+  // Initial position — no animation
+  snapTo(currentIdx, false);
+}
+
 function buildAllDrums() {
   DRUM_FIELDS.forEach(([rollerId, inputId]) => buildDrum(rollerId, inputId));
 }
 
+// Called whenever unit changes — rebuilds all drums with correct ranges
+// Hidden inputs stay in kg; drumGetValue converts to new unit automatically
 function rebuildDrumsForUnit() {
-  // Rebuild with new unit ranges; convert current value before rebuild
   const unit = getUnit();
-  const weightFields = ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'];
 
-  weightFields.forEach(id => {
-    const hidden = document.getElementById(id);
-    if (!hidden) return;
-    const kgVal = parseFloat(hidden.value);
-    if (!Number.isFinite(kgVal)) return;
-    // hidden inputs always store in kg; drum displays in current unit
-    // so just rebuild — drumGetValue reads from hidden which stays in kg
-    // and drumConfig will return unit-appropriate range
+  // Update unit label spans
+  DRUM_FIELDS.forEach(([, inputId]) => {
+    const span = document.getElementById(inputId + '-unit');
+    if (span) span.textContent = unit;
   });
+  const barLbl = document.getElementById('bar-unit-label');
+  if (barLbl) barLbl.textContent = unit;
+  const customLbl = document.getElementById('custom-unit-label');
+  if (customLbl) customLbl.textContent = unit;
 
-  // Update unit labels next to drums
-  const unit2 = getUnit();
-  DRUM_FIELDS.forEach(([rollerId, inputId]) => {
-    const unitSpan = document.getElementById(inputId + '-unit');
-    if (unitSpan) unitSpan.textContent = unit2;
-  });
-  document.getElementById('bar-unit-label').textContent = unit2;
-  document.getElementById('custom-unit-label').textContent = unit2;
-
+  // Rebuild every drum — drumGetValue will read kg from hidden input
+  // and convert to new unit, so the drum centers on the correct value
   buildAllDrums();
 }
 
