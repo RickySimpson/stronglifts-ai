@@ -3,2748 +3,517 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
-<title>StrongLifts AI — stronglifts.itricky.com</title>
+<meta name="theme-color" content="#fffdfa">
+<title>RackCity</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@400;600;700&family=DM+Sans:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=DM+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
 <style>
-/* ── Reset & Variables ─────────────────────────────────────────── */
-*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;}
-:root{
-  --bg:#ffffff;
-  --bg2:#f8f8f8;
-  --bg3:#ffffff;
-  --border:#d9d9d9;
-  --text:#111111;
-  --muted:#555555;
-  --hint:#777777;
-  --purple:#d62828;
-  --purple-dim:#fdeaea;
-  --green:#2f9e44;
-  --green-dim:#e9f7ee;
-  --amber:#b7791f;
-  --amber-dim:#fff4df;
-  --red:#d62828;
-  --font-display:'Barlow Condensed',sans-serif;
-  --font-body:'DM Sans',sans-serif;
-  --r:10px;
-  --api:https://stronglifts-api.itricky.com;
-}
-html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font-body);font-size:15px;line-height:1.5;}
-
-/* ── Layout ────────────────────────────────────────────────────── */
-.app{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;}
-.topbar{display:flex;align-items:center;justify-content:space-between;padding:16px 20px 8px;border-bottom:1px solid var(--border);background:#fff;}
-.logo{font-family:var(--font-display);font-size:22px;font-weight:700;letter-spacing:.5px;}
-.logo span{color:var(--purple);}
-.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green);flex-shrink:0;}
-.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite;}
-.sync-dot.err{background:var(--red);}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
-
-.content{flex:1;overflow-y:auto;padding:16px 20px 100px;}
-
-/* ── Nav ───────────────────────────────────────────────────────── */
-.nav{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;display:flex;background:#ffffff;border-top:1px solid var(--border);z-index:100;box-shadow:0 -4px 16px rgba(0,0,0,.04);}
-.nav-btn{flex:1;padding:10px 0 14px;border:none;background:none;color:var(--muted);font-family:var(--font-body);font-size:11px;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:4px;transition:color .15s;}
-.nav-btn.active{color:var(--purple);}
-.nav-icon{font-size:20px;line-height:1;}
-
-/* ── Section visibility ────────────────────────────────────────── */
-.section{display:none;}.section.active{display:block;}
-
-/* ── Cards ─────────────────────────────────────────────────────── */
-.card{background:var(--bg2);border:1px solid var(--border);border-radius:var(--r);padding:16px;margin-bottom:12px;box-shadow:0 1px 3px rgba(0,0,0,.04);}
-.card-title{font-family:var(--font-display);font-size:17px;font-weight:600;letter-spacing:.3px;margin-bottom:12px;color:var(--text);}
-
-/* ── Metric grid ───────────────────────────────────────────────── */
-.metrics{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:16px;}
-.metric{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px 10px;}
-.metric-label{font-size:11px;color:var(--muted);margin-bottom:3px;text-transform:uppercase;letter-spacing:.04em;}
-.metric-value{font-family:var(--font-display);font-size:26px;font-weight:700;line-height:1;}
-.metric-sub{font-size:11px;color:var(--hint);margin-top:3px;}
-
-/* ── Progress bars ─────────────────────────────────────────────── */
-.bar-wrap{margin:8px 0;}
-.bar-label{display:flex;justify-content:space-between;font-size:12px;color:var(--muted);margin-bottom:5px;}
-.bar-bg{height:6px;background:var(--bg3);border-radius:3px;overflow:hidden;}
-.bar-fill{height:100%;border-radius:3px;transition:width .4s ease;}
-
-/* ── Exercise rows ─────────────────────────────────────────────── */
-.ex-row{display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);}
-.ex-row:last-child{border-bottom:none;}
-.ex-name{font-weight:500;font-size:15px;}
-.ex-detail{font-size:12px;color:var(--muted);margin-top:2px;}
-.ex-weight{font-family:var(--font-display);font-size:22px;font-weight:700;}
-.ex-sets{font-size:11px;color:var(--muted);}
-
-/* ── Badges ────────────────────────────────────────────────────── */
-.badge{display:inline-block;font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;letter-spacing:.02em;}
-.b-purple{background:var(--purple-dim);color:var(--purple);}
-.b-green{background:var(--green-dim);color:var(--green);}
-.b-amber{background:var(--amber-dim);color:var(--amber);}
-
-/* ── AI insight box ────────────────────────────────────────────── */
-.ai-box{background:var(--purple-dim);border:1px solid #f1b5b5;border-radius:8px;padding:12px 14px;margin-top:10px;}
-.ai-box-label{font-size:11px;font-weight:500;color:var(--purple);margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em;}
-.ai-box p{font-size:13px;color:#6b1f1f;line-height:1.55;}
-
-/* ── Buttons ───────────────────────────────────────────────────── */
-.btn{width:100%;padding:11px;font-size:14px;cursor:pointer;border:1px solid var(--border);border-radius:8px;background:none;color:var(--text);font-family:var(--font-body);text-align:left;display:flex;justify-content:space-between;align-items:center;margin-top:8px;transition:background .15s;}
-.btn:hover{background:var(--bg3);}
-.btn-primary{background:var(--purple);border-color:var(--purple);color:#fff;justify-content:center;font-weight:500;}
-.btn-primary:hover{background:#b91c1c;}
-
-/* ── Planned sets ─────────────────────────────────────────────── */
-.session-tools{display:flex;gap:8px;align-items:center;margin-top:12px;flex-wrap:wrap;}
-.rest-timer{flex:1;min-width:120px;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;display:flex;justify-content:space-between;align-items:center;}
-.rest-timer strong{font-family:var(--font-display);font-size:24px;line-height:1;}
-.mini-btn{background:var(--bg3);border:1px solid var(--border);border-radius:8px;color:var(--text);padding:10px 12px;cursor:pointer;font-family:var(--font-body);}
-.mini-btn:hover{background:#f0f0f0;}
-.mini-btn.primary{background:var(--purple);border-color:var(--purple);color:#fff;}
-.set-plan{display:flex;flex-direction:column;gap:10px;margin-top:12px;}
-.set-card{border:1px solid var(--border);border-radius:10px;background:var(--bg3);padding:12px;}
-.set-card.done{border-color:var(--green);background:#f1fbf4;}
-.set-card.failed{border-color:var(--amber);background:#fff8ec;}
-.set-top{display:flex;justify-content:space-between;align-items:center;gap:8px;}
-.set-title{font-weight:600;font-size:14px;}
-.set-meta{font-size:12px;color:var(--muted);margin-top:2px;}
-.set-status{font-size:11px;padding:3px 8px;border-radius:999px;background:var(--bg2);color:var(--muted);border:1px solid var(--border);}
-.set-status.done{background:var(--green-dim);color:var(--green);border-color:transparent;}
-.set-status.failed{background:var(--amber-dim);color:var(--amber);border-color:transparent;}
-.set-controls{display:grid;grid-template-columns:1fr auto auto;gap:8px;margin-top:10px;align-items:center;}
-.set-controls input{background:var(--bg2);border:1px solid var(--border);border-radius:8px;padding:10px;color:var(--text);font-family:var(--font-body);font-size:14px;width:100%;}
-.set-controls button{border:none;border-radius:8px;padding:10px 12px;cursor:pointer;font-family:var(--font-body);font-size:13px;}
-.set-complete{background:var(--purple);color:#fff;}
-.set-fail{background:var(--bg2);color:var(--amber);border:1px solid var(--amber);}
-
-/* ── Week dots ─────────────────────────────────────────────────── */
-.week-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:6px;margin-bottom:16px;}
-.wday-name{font-size:10px;color:var(--muted);text-align:center;margin-bottom:4px;text-transform:uppercase;}
-.wday-dot{width:32px;height:32px;border-radius:50%;margin:0 auto;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;}
-.dot-done{background:var(--purple);color:#fff;}
-.dot-rest{background:var(--bg3);color:var(--hint);}
-.dot-today{border:2px solid var(--purple);color:var(--purple);}
-.dot-future{background:var(--bg3);color:var(--hint);opacity:.4;}
-
-/* ── Toggle ────────────────────────────────────────────────────── */
-.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:11px 0;border-bottom:1px solid var(--border);}
-.toggle-row:last-child{border-bottom:none;}
-.toggle-label{font-size:14px;color:var(--text);}
-.toggle-desc{font-size:12px;color:var(--muted);margin-top:2px;}
-.tog{position:relative;width:40px;height:24px;flex-shrink:0;}
-.tog input{opacity:0;width:0;height:0;}
-.tog-slider{position:absolute;inset:0;background:var(--bg3);border-radius:12px;cursor:pointer;transition:background .2s;border:1px solid var(--border);}
-.tog-slider:before{content:'';position:absolute;width:18px;height:18px;left:2px;top:2px;background:var(--muted);border-radius:50%;transition:transform .2s,background .2s;}
-.tog input:checked+.tog-slider{background:var(--purple);border-color:var(--purple);}
-.tog input:checked+.tog-slider:before{transform:translateX(16px);background:#fff;}
-
-/* ── Meal rows ─────────────────────────────────────────────────── */
-.meal-row{display:flex;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
-.meal-row:last-child{border-bottom:none;}
-.meal-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;margin-right:12px;}
-.meal-name{font-weight:500;font-size:14px;}
-.meal-detail{font-size:12px;color:var(--muted);}
-.meal-cals{font-family:var(--font-display);font-size:18px;font-weight:700;white-space:nowrap;margin-left:auto;}
-.meal-macro{font-size:11px;color:var(--muted);text-align:right;}
-
-/* ── Prep card ─────────────────────────────────────────────────── */
-.prep-card{border:1px solid var(--border);border-radius:8px;padding:12px;margin-bottom:8px;}
-.prep-title{font-weight:500;font-size:14px;margin-bottom:6px;}
-.prep-meta{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:8px;}
-.prep-steps{font-size:13px;color:var(--muted);line-height:1.55;}
-
-/* ── History list ──────────────────────────────────────────────── */
-.history-row{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--border);}
-.history-row:last-child{border-bottom:none;}
-.history-date{font-size:12px;color:var(--muted);}
-
-/* ── Form inputs ───────────────────────────────────────────────── */
-.form-group{margin-bottom:14px;}
-.form-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;}
-select,input[type=number]{width:100%;background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:10px 12px;color:var(--text);font-family:var(--font-body);font-size:14px;}
-.form-row{display:grid;grid-template-columns:1fr 1fr;gap:10px;}
-.review-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
-.review-cell{background:var(--bg3);border-radius:8px;padding:10px;}
-.review-k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:3px;}
-.review-v{font-family:var(--font-display);font-size:22px;line-height:1;}
-.review-note{font-size:12px;color:var(--muted);line-height:1.55;}
-
-/* ── Warmup / progression ─────────────────────────────────────── */
-.warmup-box{background:var(--bg3);border:1px solid var(--border);border-radius:8px;padding:12px;margin-top:12px;}
-.warmup-row{display:flex;justify-content:space-between;gap:8px;padding:7px 0;border-bottom:1px solid var(--border);font-size:13px;}
-.warmup-row:last-child{border-bottom:none;}
-.warmup-lift{font-weight:500;}
-.warmup-note{color:var(--muted);font-size:12px;}
-.status-chip{display:inline-block;padding:2px 8px;border-radius:999px;font-size:11px;font-weight:600;letter-spacing:.02em;}
-.status-success{background:var(--green-dim);color:var(--green);}
-.status-repeat{background:var(--amber-dim);color:var(--amber);}
-.status-deload{background:#fdeaea;color:var(--red);}
-
-
-/* ── Phase 4 progress UI ─────────────────────────────────────── */
-.chip-row{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;}
-.chip-btn{border:1px solid var(--border);background:var(--bg3);color:var(--muted);padding:8px 10px;border-radius:999px;font-size:12px;cursor:pointer;font-family:var(--font-body);}
-.chip-btn.active{background:var(--purple-dim);color:var(--purple);border-color:#3d3580;}
-.milestone-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;}
-.milestone{background:var(--bg3);border-radius:8px;padding:10px;}
-.milestone-k{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;margin-bottom:4px;}
-.milestone-v{font-family:var(--font-display);font-size:24px;line-height:1;}
-.milestone-note{font-size:12px;color:var(--muted);line-height:1.5;}
-.chart-box{background:var(--bg3);border:1px solid var(--border);border-radius:10px;padding:12px;margin-bottom:12px;}
-.chart-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);margin-top:8px;}
-.history-detail-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border);}
-.history-detail-row:last-child{border-bottom:none;}
-.history-detail-main{font-size:13px;}
-.history-detail-sub{font-size:12px;color:var(--muted);margin-top:2px;}
-.pr-pill{display:inline-block;padding:2px 7px;border-radius:999px;font-size:11px;font-weight:600;background:var(--green-dim);color:var(--green);margin-left:6px;}
-
-/* ── Toast ─────────────────────────────────────────────────────── */
-.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%);background:var(--bg2);border:1px solid var(--border);border-radius:20px;padding:8px 18px;font-size:13px;color:var(--text);opacity:0;transition:opacity .2s;z-index:200;white-space:nowrap;}
-.toast.show{opacity:1;}
-/* ── Plate calculator ──────────────────────────────────────────── */
-.plate-input-grid{display:grid;grid-template-columns:1fr;gap:8px;margin-bottom:14px;width:100%;}
-.plate-input-row{display:flex;align-items:center;justify-content:space-between;padding:10px 14px;background:var(--bg3);border:1px solid var(--border);border-radius:14px;min-width:0;overflow:hidden;box-sizing:border-box;width:100%;}
-.plate-label{font-size:14px;font-weight:600;color:var(--text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;margin-right:8px;}
-.plate-sub{font-size:11px;color:var(--muted);margin-top:1px;}
-.plate-counter{display:flex;align-items:center;gap:8px;flex-shrink:0;}
-.plate-count{font-family:var(--font-display);font-size:22px;font-weight:700;min-width:28px;text-align:center;color:var(--text);}
-.plate-btn{width:32px;height:32px;border-radius:999px;border:1px solid var(--border);background:#fff;font-size:18px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;color:var(--text);line-height:1;transition:background .1s;}
-.plate-btn:hover{background:var(--purple-dim);color:var(--purple);}
-.bar-weight-row{display:flex;align-items:center;gap:10px;margin-bottom:14px;}
-.bar-weight-row label{font-size:13px;color:var(--muted);white-space:nowrap;}
-.bar-weight-row input{width:90px;text-align:center;}
-
-/* ── Plate display diagram ─────────────────────────────────────── */
-.plate-diagram{margin:14px 0;overflow-x:auto;}
-.bar-visual{display:flex;align-items:center;justify-content:center;gap:0;min-height:60px;padding:0 4px;}
-.bar-sleeve{width:28px;height:10px;background:var(--border);border-radius:4px;flex-shrink:0;}
-.bar-center{flex:1;max-width:100px;height:7px;background:var(--border);border-radius:2px;position:relative;}
-.bar-center::after{content:'BAR';position:absolute;top:-18px;left:50%;transform:translateX(-50%);font-size:9px;color:var(--muted);letter-spacing:.06em;white-space:nowrap;}
-.plate-stack{display:flex;align-items:center;gap:2px;}
-.plate-block{border-radius:4px;display:flex;align-items:center;justify-content:center;font-family:var(--font-display);font-weight:700;color:#fff;font-size:10px;letter-spacing:.02em;flex-shrink:0;}
-.plate-result{background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);border:1px solid rgba(32,22,16,.06);border-radius:16px;padding:14px;margin-top:4px;}
-.plate-result-title{font-family:var(--font-display);font-size:18px;font-weight:700;margin-bottom:8px;color:var(--text);}
-.plate-result-row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;border-bottom:1px solid rgba(32,22,16,.06);font-size:13px;}
-.plate-result-row:last-child{border-bottom:none;}
-.plate-result-ex{font-weight:600;color:var(--text);}
-.plate-result-detail{color:var(--muted);font-size:12px;margin-top:2px;}
-.plate-result-badge{font-family:var(--font-display);font-size:15px;font-weight:700;color:var(--red);}
-.plate-impossible{background:#fff8f0;border:1px solid rgba(183,121,31,.2);border-radius:12px;padding:10px 12px;font-size:13px;color:var(--amber);margin-top:4px;}
-/* ── Drum roller picker ────────────────────────────────────────── */
-/*
- * GEOMETRY: viewport = 5 × ITEM_H = 220px. Center slot = rows[2].
- * track translateY = -(selectedIdx × ITEM_H) + (2 × ITEM_H)
- * so that row[selectedIdx] lands at the center slot.
- * Fades top/bottom 2 rows with gradient masks.
- * Red selection lines are border-box inset to the center slot.
- */
-:root { --drum-item-h: 44px; }
-.drum-field{margin-bottom:14px;}
-.drum-label{font-size:13px;color:var(--muted);margin-bottom:6px;display:block;font-family:var(--font-body);}
-.drum-wrap{display:flex;align-items:center;gap:0;}
-.drum-roller{
-  flex:1;
-  height:calc(var(--drum-item-h) * 5);  /* show 5 rows */
-  overflow:hidden;
-  position:relative;
-  background:var(--bg3);
-  border:1px solid var(--border);
-  border-radius:14px;
-  cursor:grab;
-  user-select:none;
-  touch-action:none;
-}
-.drum-roller:active{cursor:grabbing;}
-/* top & bottom fade */
-.drum-roller::before,
-.drum-roller::after{
-  content:'';
-  position:absolute;left:0;right:0;
-  height:calc(var(--drum-item-h) * 2);
-  z-index:3;pointer-events:none;
-}
-.drum-roller::before{top:0;background:linear-gradient(to bottom,var(--bg3) 10%,transparent);}
-.drum-roller::after{bottom:0;background:linear-gradient(to top,var(--bg3) 10%,transparent);}
-/* selection band */
-.drum-selector{
-  position:absolute;
-  top:calc(var(--drum-item-h) * 2);
-  height:var(--drum-item-h);
-  left:0;right:0;
-  border-top:2px solid var(--purple);
-  border-bottom:2px solid var(--purple);
-  pointer-events:none;
-  z-index:2;
-}
-.drum-track{
-  position:absolute;
-  top:0;left:0;right:0;
-  display:flex;flex-direction:column;
-  will-change:transform;
-}
-.drum-item{
-  height:var(--drum-item-h);
-  display:flex;align-items:center;justify-content:center;
-  font-family:var(--font-display);
-  font-size:20px;font-weight:700;
-  color:var(--hint);
-  flex-shrink:0;
-  transition:color .12s, font-size .12s, opacity .12s;
-  opacity:.45;
-}
-.drum-item.near{opacity:.8;font-size:21px;}
-.drum-item.selected{color:var(--text);font-size:24px;opacity:1;}
-.drum-unit{font-size:13px;color:var(--muted);padding:0 10px;white-space:nowrap;font-weight:500;}
-
-
-
-/* ── UI polish overrides ─────────────────────────────────────── */
-:root{
-  --bg:#f5f2ee;
-  --bg2:#ffffff;
-  --bg3:#fcfaf8;
-  --border:#e7dfd7;
-  --text:#161616;
-  --muted:#6f655d;
-  --hint:#9a8f86;
-  --purple:#c62828;
-  --purple-dim:#fff3f2;
-  --green:#2f9e44;
-  --green-dim:#eef9f1;
-  --amber:#b7791f;
-  --amber-dim:#fff8eb;
-  --red:#c62828;
-  --r:16px;
-}
-html,body{background:linear-gradient(180deg,#f8f6f3 0%,#f3efea 100%);color:var(--text);}
-.app{max-width:500px;}
-.topbar{
-  position:sticky;top:0;z-index:50;
-  padding:18px 20px 12px;
-  background:rgba(248,246,243,.82);
-  backdrop-filter:blur(12px);
-  border-bottom:1px solid rgba(199,40,40,.08);
-}
-.logo{font-size:24px;letter-spacing:.3px;}
-.content{padding:18px 18px 104px;}
-.card{
-  background:rgba(255,255,255,.92);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:20px;
-  padding:16px;
-  margin-bottom:14px;
-  box-shadow:0 10px 28px rgba(26,18,11,.06);
-}
-.card-title{
-  font-size:19px;
-  letter-spacing:.2px;
-  margin-bottom:14px;
-}
-.metrics{gap:10px;margin-bottom:18px;}
-.metric{
-  background:linear-gradient(180deg,#ffffff 0%,#fbf8f6 100%);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:16px;
-  padding:13px 11px;
-  box-shadow:0 4px 12px rgba(26,18,11,.03);
-}
-.metric-label,.review-k,.milestone-k{color:#8b7f75;}
-.metric-value,.review-v,.milestone-v{letter-spacing:.2px;}
-.metric-sub,.warmup-note,.ex-detail,.ex-sets,.history-date,.review-note{color:var(--muted);}
-.ex-row{padding:14px 0;border-bottom:1px solid rgba(22,22,22,.06);}
-.ex-name{font-size:16px;font-weight:600;}
-.ex-weight{font-size:28px;}
-.ai-box{
-  background:linear-gradient(180deg,#fff8f7 0%,#fff3f1 100%);
-  border:1px solid rgba(198,40,40,.14);
-  border-left:4px solid var(--red);
-  border-radius:16px;
-  padding:14px 14px 14px 16px;
-  margin-top:12px;
-}
-.ai-box-label{font-size:10px;letter-spacing:.08em;}
-.ai-box p{color:#5b2424;font-size:13px;line-height:1.6;}
-.btn{
-  border-radius:14px;
-  padding:13px 14px;
-  border:1px solid rgba(22,22,22,.08);
-  background:#fff;
-  box-shadow:0 2px 8px rgba(26,18,11,.03);
-}
-.btn:hover,.mini-btn:hover{background:#faf6f3;}
-.btn-primary,.set-complete,.mini-btn.primary{
-  background:linear-gradient(180deg,#d93434 0%,#bf2323 100%);
-  border-color:#bf2323;
-  color:#fff;
-  box-shadow:0 10px 18px rgba(198,40,40,.18);
-}
-.btn-primary:hover{background:linear-gradient(180deg,#d93434 0%,#bf2323 100%);}
-.session-tools{margin-top:14px;}
-.rest-timer,.warmup-box,.chart-box,.review-cell,.milestone,.prep-card{
-  background:linear-gradient(180deg,#ffffff 0%,#fbf8f6 100%);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:16px;
-}
-.rest-timer{
-  padding:12px 14px;
-  box-shadow:0 4px 12px rgba(26,18,11,.03);
-}
-.rest-timer strong{font-size:28px;}
-.mini-btn{
-  background:#fff;
-  border:1px solid rgba(22,22,22,.08);
-  border-radius:14px;
-  padding:11px 13px;
-}
-.warmup-box{padding:14px;margin-top:14px;}
-.warmup-row{border-bottom:1px solid rgba(22,22,22,.06);}
-.nav{
-  background:rgba(255,255,255,.9);
-  backdrop-filter:blur(12px);
-  border-top:1px solid rgba(22,22,22,.06);
-  box-shadow:0 -10px 24px rgba(26,18,11,.08);
-}
-.nav-btn{padding:10px 0 15px;font-size:11px;}
-.nav-btn.active{color:var(--red);}
-.nav-icon{font-size:18px;}
-.week-grid{margin-bottom:18px;}
-.wday-dot{width:34px;height:34px;}
-.dot-done{background:linear-gradient(180deg,#d93434 0%,#bf2323 100%);}
-.dot-today{border-color:var(--red);color:var(--red);background:#fff;}
-select,input[type=number]{
-  background:#fff;
-  border:1px solid rgba(22,22,22,.08);
-  border-radius:14px;
-  padding:12px 13px;
-}
-.toast{
-  background:rgba(255,255,255,.96);
-  border:1px solid rgba(22,22,22,.08);
-  border-radius:999px;
-  box-shadow:0 10px 24px rgba(26,18,11,.12);
-}
-
-/* Compact exercise logger */
-.set-plan{display:flex;flex-direction:column;gap:12px;margin-top:14px;}
-.exercise-card{
-  background:linear-gradient(180deg,#fff 0%,#fbf8f6 100%);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:18px;
-  padding:14px;
-  box-shadow:0 8px 18px rgba(26,18,11,.05);
-}
-.exercise-top{
-  display:flex;justify-content:space-between;gap:12px;align-items:flex-start;
-}
-.exercise-title{
-  font-size:17px;
-  font-weight:700;
-  color:var(--text);
-}
-.exercise-meta{
-  color:var(--muted);
-  font-size:12px;
-  margin-top:2px;
-}
-.exercise-next{
-  color:#8c3b3b;
-  font-size:12px;
-  margin-top:6px;
-  font-weight:500;
-}
-.set-strip{
-  display:flex;
-  gap:10px;
-  flex-wrap:wrap;
-  margin-top:14px;
-}
-.set-pill{
-  width:44px;
-  height:44px;
-  border-radius:999px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:15px;
-  font-weight:800;
-  border:1px solid rgba(22,22,22,.08);
-  background:#fff;
-  color:var(--muted);
-  box-shadow:inset 0 -1px 0 rgba(0,0,0,.02);
-  cursor:pointer;
-  transition:transform .12s ease, box-shadow .12s ease, border-color .12s ease, background .12s ease, color .12s ease;
-}
-.set-pill:hover{
-  transform:translateY(-1px);
-  box-shadow:0 8px 16px rgba(26,18,11,.08);
-}
-.set-pill:active{transform:translateY(0);}
-.set-pill.pending{background:#f7f2ee;color:#8b7f75;}
-.set-pill.active{
-  background:linear-gradient(180deg,#fff5f5 0%,#fee8e8 100%);
-  color:var(--red);
-  border-color:rgba(198,40,40,.26);
-  box-shadow:0 8px 16px rgba(198,40,40,.14);
-}
-.set-pill.done{
-  background:linear-gradient(180deg,#f3fcf5 0%,#e9f7ee 100%);
-  color:var(--green);
-  border-color:rgba(47,158,68,.2);
-}
-.set-pill.failed{
-  background:linear-gradient(180deg,#fffaf0 0%,#fff3df 100%);
-  color:var(--amber);
-  border-color:rgba(183,121,31,.22);
-}
-.set-pill-index{
-  font-size:12px;
-  font-weight:700;
-  opacity:.85;
-}
-.set-hint{
-  margin-top:12px;
-  font-size:12px;
-  color:var(--muted);
-  line-height:1.45;
-}
-.set-status{border-radius:999px;background:#f8f4f1;border:1px solid rgba(22,22,22,.06);}
-.status-chip{
-  border-radius:999px;
-  padding:4px 9px;
-  font-size:10px;
-}
-.status-success{background:#eef9f1;color:#25893a;}
-.status-repeat{background:#fff6e8;color:#a36b13;}
-.status-deload{background:#fff1f1;color:#c62828;}
-
-.chip-btn{
-  border-radius:999px;
-  background:#fff;
-  border:1px solid rgba(22,22,22,.08);
-  padding:9px 12px;
-}
-.chip-btn.active{
-  background:linear-gradient(180deg,#fff5f5 0%,#feeaea 100%);
-  color:var(--red);
-  border-color:rgba(198,40,40,.18);
-}
-.chart-box svg polyline{stroke:var(--red);}
-.history-row,.history-detail-row,.meal-row,.toggle-row{border-bottom:1px solid rgba(22,22,22,.06);}
-.review-grid,.milestone-grid{gap:10px;}
-.pr-pill{
-  background:#eef9f1;color:#2b8f41;border-radius:999px;
-}
-
-
-
-/* ── Today hero polish ───────────────────────────────────────── */
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 :root{
   --bg:#fffdfa;
-  --bg2:#ffffff;
-  --bg3:#f7f2ee;
-  --border:#e8ddd4;
+  --card:#fff;
+  --soft:#f8f3ee;
+  --soft-red:#fff0ef;
+  --border:#eadfd7;
   --text:#171311;
-  --muted:#6f635b;
-  --hint:#9a8f87;
+  --muted:#74675f;
+  --hint:#a3958b;
   --red:#c92f2f;
-  --purple:var(--red);
-  --purple-dim:#fff0ef;
-  --card-shadow:0 10px 30px rgba(34,20,12,.06);
+  --red-dark:#aa2020;
+  --green:#2f8f47;
+  --amber:#ad731b;
+  --display:'Barlow Condensed',sans-serif;
+  --body:'DM Sans',sans-serif;
 }
-html,body{background:linear-gradient(180deg,#fffdfa 0%,#fbf7f3 100%);color:var(--text);}
-.app{max-width:520px;}
-.topbar{
-  padding:18px 22px 10px;
-  border-bottom:0;
-  background:rgba(255,253,250,.88);
-  backdrop-filter:blur(14px);
+html,body{min-height:100%;background:linear-gradient(180deg,#fffdfa 0%,#faf6f1 100%);color:var(--text);font-family:var(--body);font-size:15px;line-height:1.5}
+button,input{font:inherit}
+button{touch-action:manipulation}
+.app{width:min(100%,620px);margin:0 auto;padding:0 18px 48px}
+.topbar{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:20px 2px 14px}
+.brand{font-family:var(--display);font-size:26px;font-weight:700;letter-spacing:.02em}
+.brand span{color:var(--red)}
+.sync{display:flex;align-items:center;gap:7px;font-size:12px;color:var(--muted);white-space:nowrap}
+.sync-dot{width:8px;height:8px;border-radius:50%;background:var(--green)}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+.sync-dot.err{background:var(--red)}
+@keyframes pulse{50%{opacity:.35}}
+.hero{padding:8px 2px 20px}
+.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01em;margin-bottom:10px}
+.hero p{max-width:48ch;color:var(--muted);font-size:14px;line-height:1.6}
+.card{background:rgba(255,255,255,.94);border:1px solid rgba(23,19,17,.07);border-radius:24px;padding:18px;margin-bottom:14px;box-shadow:0 14px 36px rgba(43,28,18,.055)}
+.card-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:14px}
+.card-title{font-family:var(--display);font-size:22px;font-weight:700;line-height:1}
+.card-sub{font-size:12px;color:var(--muted);margin-top:5px;line-height:1.5}
+.segmented{display:grid;grid-template-columns:1fr 1fr;gap:4px;background:var(--soft);padding:4px;border-radius:14px;min-width:150px}
+.segmented button{border:0;background:transparent;color:var(--muted);font-size:12px;font-weight:700;padding:9px 12px;border-radius:10px;cursor:pointer}
+.segmented button.active{background:#fff;color:var(--red);box-shadow:0 4px 12px rgba(43,28,18,.08)}
+.control-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
+.field{min-width:0}
+.field label{display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+.stepper{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;background:var(--soft);border:1px solid rgba(23,19,17,.06);border-radius:16px;overflow:hidden}
+.stepper button{height:48px;border:0;background:transparent;color:var(--red);font-size:22px;font-weight:700;cursor:pointer}
+.stepper button:active{background:var(--soft-red)}
+.stepper input{width:100%;height:48px;border:0;outline:0;background:transparent;color:var(--text);text-align:center;font-family:var(--display);font-size:24px;font-weight:700;-moz-appearance:textfield}
+.stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.unit-suffix{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:600;margin-left:3px}
+.plates-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.plate-row{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:12px;background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);border:1px solid rgba(23,19,17,.06);border-radius:17px}
+.plate-name{display:flex;align-items:center;gap:9px;min-width:0}
+.plate-swatch{width:10px;height:32px;border-radius:4px;flex:0 0 auto}
+.plate-weight{font-family:var(--display);font-size:20px;font-weight:700;line-height:1}
+.plate-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.pair-counter{display:flex;align-items:center;gap:6px;flex:0 0 auto}
+.pair-counter button{width:34px;height:34px;border:1px solid rgba(23,19,17,.08);border-radius:11px;background:#fff;color:var(--text);font-size:18px;font-weight:700;cursor:pointer}
+.pair-counter button:active{background:var(--soft-red);color:var(--red)}
+.pair-count{min-width:22px;text-align:center;font-family:var(--display);font-size:20px;font-weight:700}
+.inventory-note{font-size:11px;color:var(--muted);margin-top:12px}
+.reset-link{border:0;background:transparent;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;padding:4px 0}
+.target-card{border-color:rgba(201,47,47,.10);background:linear-gradient(180deg,#fff 0%,#fffafa 100%)}
+.target-wrap{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:8px;margin-top:4px}
+.target-wrap button{height:52px;border:1px solid rgba(201,47,47,.14);border-radius:16px;background:var(--soft-red);color:var(--red);font-size:25px;font-weight:700;cursor:pointer}
+.target-input-wrap{display:flex;align-items:baseline;justify-content:center;border-bottom:2px solid rgba(201,47,47,.18);padding:4px 8px 7px}
+.target-input-wrap input{width:100%;max-width:180px;border:0;outline:0;background:transparent;text-align:center;color:var(--text);font-family:var(--display);font-size:54px;font-weight:700;line-height:1;-moz-appearance:textfield}
+.target-input-wrap input::-webkit-outer-spin-button,.target-input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+.target-unit{font-family:var(--display);font-size:20px;color:var(--red);font-weight:700}
+.quick-targets{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;justify-content:center}
+.quick-targets button{border:1px solid rgba(23,19,17,.08);background:#fff;color:var(--muted);padding:7px 10px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer}
+.quick-targets button:active{background:var(--soft-red);color:var(--red)}
+.result-empty{padding:30px 8px;text-align:center;color:var(--muted);font-size:13px}
+.result-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:6px}
+.result-kicker{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.result-big{font-family:var(--display);font-size:38px;font-weight:700;line-height:1;color:var(--red);margin-top:4px}
+.result-delta{font-size:11px;color:var(--amber);margin-top:5px}
+.exact-badge{display:inline-flex;align-items:center;gap:5px;background:#eef8f0;color:var(--green);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:700}
+.near-badge{display:inline-flex;align-items:center;gap:5px;background:#fff6e8;color:var(--amber);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:700}
+.bar-diagram{overflow-x:auto;padding:18px 0 12px}
+.bar-visual{min-width:300px;display:flex;align-items:center;justify-content:center;gap:0;min-height:76px}
+.sleeve{width:25px;height:11px;background:#c8c0ba;border-radius:4px;flex:0 0 auto}
+.bar-center{width:88px;height:8px;background:#c8c0ba;position:relative;flex:0 0 auto}
+.bar-center:after{content:'BAR';position:absolute;left:50%;top:-22px;transform:translateX(-50%);font-size:9px;letter-spacing:.08em;color:var(--hint)}
+.plate-stack{display:flex;align-items:center;gap:2px}
+.plate-block{border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-size:9px;font-weight:700;flex:0 0 auto;writing-mode:vertical-rl;text-orientation:mixed}
+.load-list{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}
+.load-cell{background:var(--soft);border-radius:14px;padding:11px 12px}
+.load-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.load-value{font-family:var(--display);font-size:20px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
+.load-cell.full{grid-column:1/-1}
+.error-box{background:#fff5eb;border:1px solid rgba(173,115,27,.16);border-radius:16px;padding:13px;color:var(--amber);font-size:13px;line-height:1.55}
+.footer-note{text-align:center;color:var(--hint);font-size:11px;padding:10px 0 0}
+.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:20;background:rgba(23,19,17,.94);color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
+.toast.show{opacity:1}
+@media(max-width:520px){
+  .app{padding-left:14px;padding-right:14px}
+  h1{font-size:38px}
+  .card{padding:16px;border-radius:21px}
+  .card-head{align-items:center}
+  .control-row{grid-template-columns:1fr}
+  .plates-grid{grid-template-columns:1fr}
 }
-.logo{font-size:24px;letter-spacing:.04em;}
-.content{padding:18px 20px 112px;}
-.card{
-  background:rgba(255,255,255,.84);
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:22px;
-  padding:18px;
-  box-shadow:var(--card-shadow);
+@media(max-width:360px){
+  .topbar{align-items:flex-start}
+  .brand{font-size:23px}
+  .target-input-wrap input{font-size:46px}
+  .load-list{grid-template-columns:1fr}
+  .load-cell.full{grid-column:auto}
 }
-.card-title{font-size:20px;letter-spacing:.02em;margin-bottom:14px;}
-.metrics{gap:10px;margin-bottom:18px;}
-.metric{
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:18px;
-  background:linear-gradient(180deg,#fff 0%,#fbf8f4 100%);
-  padding:14px 12px;
-  box-shadow:0 6px 16px rgba(34,20,12,.04);
-}
-.metric-value{font-size:28px;}
-.metric-sub{color:#90837b;}
-#week-dots{margin-bottom:18px;}
-.wday-dot{width:34px;height:34px;border-radius:14px;}
-.dot-rest,.dot-future{background:#f5eee8;}
-.dot-today{background:#fff5f5;}
-.nav{
-  background:rgba(255,255,255,.92);
-  backdrop-filter:blur(12px);
-  border-top:1px solid rgba(32,22,16,.08);
-  box-shadow:0 -10px 28px rgba(34,20,12,.06);
-}
-
-#workout-card{
-  background:linear-gradient(180deg,rgba(255,255,255,.98) 0%,rgba(251,247,243,.98) 100%);
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:28px;
-  padding:20px;
-  box-shadow:0 18px 42px rgba(34,20,12,.08);
-}
-#workout-card .card-title{
-  font-size:26px;
-  margin-bottom:12px;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-}
-#exercise-list{
-  display:grid;
-  grid-template-columns:repeat(3,minmax(0,1fr));
-  gap:10px;
-  margin-bottom:14px;
-}
-.ex-row{
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:18px;
-  padding:14px 12px;
-  background:linear-gradient(180deg,#fff 0%,#f9f5f1 100%);
-  display:block;
-}
-.ex-name{font-size:14px;font-weight:700;line-height:1.1;}
-.ex-detail{font-size:11px;margin-top:6px;}
-.ex-weight{font-size:28px;line-height:.95;margin-top:12px;}
-.ex-sets{font-size:11px;margin-top:6px;color:#8e8178;}
-.session-tools{
-  margin-top:2px;
-  padding:12px;
-  border-radius:18px;
-  background:#fff;
-  border:1px solid rgba(32,22,16,.06);
-}
-.rest-timer{
-  background:linear-gradient(180deg,#ffffff 0%,#faf5f0 100%);
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:16px;
-  padding:12px 14px;
-}
-.rest-timer span{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.04em;}
-.rest-timer strong{font-size:30px;}
-.mini-btn{
-  border-radius:14px;
-  padding:11px 14px;
-  background:#fff;
-  border:1px solid rgba(32,22,16,.06);
-}
-.mini-btn:hover{background:#fbf7f3;}
-
-.warmup-box{
-  margin-top:14px;
-  padding:0;
-  overflow:hidden;
-  border-radius:18px;
-  background:#fff;
-  border:1px solid rgba(32,22,16,.06);
-}
-.warmup-toggle{
-  appearance:none;border:none;background:none;color:var(--text);width:100%;
-  display:flex;align-items:center;justify-content:space-between;
-  padding:14px 16px;cursor:pointer;font:inherit;font-weight:700;
-}
-.warmup-toggle-meta{font-size:12px;color:var(--red);font-weight:600;}
-#warmup-list{padding:0 16px 14px;}
-.warmup-box.collapsed #warmup-list{display:none;}
-.warmup-group + .warmup-group{margin-top:10px;}
-.warmup-row{padding:9px 0;border-bottom:1px solid rgba(32,22,16,.06);}
-.warmup-row-head{padding-top:0;padding-bottom:10px;}
-.warmup-row:last-child{border-bottom:none;}
-
-.set-plan{gap:14px;margin-top:16px;}
-.exercise-card{
-  background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);
-  border:1px solid rgba(32,22,16,.06);
-  border-radius:22px;
-  padding:16px;
-  box-shadow:0 10px 24px rgba(34,20,12,.05);
-}
-.exercise-card.complete-card{opacity:.9;}
-.exercise-top{display:flex;justify-content:space-between;gap:14px;align-items:flex-start;}
-.exercise-copy{flex:1;min-width:0;}
-.exercise-title{font-size:19px;font-weight:800;letter-spacing:.01em;}
-.exercise-meta{font-size:12px;color:var(--muted);margin-top:4px;}
-.exercise-next{font-size:12px;color:#8c4545;margin-top:8px;font-weight:600;}
-.exercise-weight-badge{
-  min-width:96px;
-  border-radius:18px;
-  padding:10px 12px;
-  background:linear-gradient(180deg,#fff4f4 0%,#ffe8e8 100%);
-  border:1px solid rgba(201,47,47,.10);
-  text-align:right;
-}
-.exercise-weight-badge strong{display:block;font-family:var(--font-display);font-size:26px;line-height:.95;color:var(--red);}
-.exercise-weight-badge span{display:block;font-size:11px;color:#8c6e68;margin-top:4px;text-transform:uppercase;letter-spacing:.05em;}
-.set-strip{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px;}
-.set-pill{
-  width:40px;height:40px;border-radius:14px;
-  display:flex;align-items:center;justify-content:center;
-  font-size:13px;font-weight:800;
-  border:1px solid rgba(32,22,16,.08);
-  background:#fff;color:#8a7d75;
-  box-shadow:inset 0 -1px 0 rgba(0,0,0,.02);
-}
-.set-pill.pending{background:#f7f1eb;color:#9b8f87;}
-.set-pill.active{background:linear-gradient(180deg,#fff6f6 0%,#ffeaea 100%);color:var(--red);border-color:rgba(201,47,47,.18);box-shadow:0 8px 18px rgba(201,47,47,.12);}
-.set-pill.done{background:linear-gradient(180deg,#f4fbf5 0%,#ecf8ef 100%);color:var(--green);border-color:rgba(47,158,68,.18);}
-.set-pill.failed{background:linear-gradient(180deg,#fffaf1 0%,#fff2df 100%);color:var(--amber);border-color:rgba(183,121,31,.18);}
-
-#log-history{
-  margin-top:14px !important;
-  padding:10px 12px;
-  border-radius:16px;
-  background:#fff;
-  border:1px solid rgba(32,22,16,.06);
-}
-.ai-box{
-  margin-top:16px;
-  padding:16px 16px 16px 18px;
-  border-radius:20px;
-  background:linear-gradient(180deg,#fff3f3 0%,#fff9f7 100%);
-  border:1px solid rgba(201,47,47,.10);
-  position:relative;
-  overflow:hidden;
-}
-.ai-box::before{
-  content:'';
-  position:absolute;
-  left:0;top:0;bottom:0;
-  width:4px;
-  background:linear-gradient(180deg,#df4b4b 0%,#c92f2f 100%);
-}
-.ai-box-label{font-size:11px;font-weight:800;letter-spacing:.12em;color:var(--red);margin-bottom:8px;}
-.ai-box p{color:#5e2a2a;font-size:14px;line-height:1.65;max-width:38ch;}
-#workout-card > .btn{
-  margin-top:16px !important;
-  border-radius:18px;
-  padding:14px 16px;
-  background:linear-gradient(180deg,#d83a3a 0%,#c92f2f 100%);
-  border:none;
-  color:#fff;
-  justify-content:center;
-  font-weight:800;
-  box-shadow:0 14px 28px rgba(201,47,47,.18);
-}
-#workout-card > .btn span{color:#fff !important;}
-
-#sec-today > .card:not(#workout-card){
-  background:rgba(255,255,255,.82);
-}
-#sec-today > .card:not(#workout-card) .card-title{font-size:18px;}
-.review-cell,.milestone,.chart-box,.history-detail-row,.prep-card{
-  background:linear-gradient(180deg,#fff 0%,#fbf7f3 100%);
-  border:1px solid rgba(32,22,16,.06);
-}
-.chip-btn.active{background:#fff1f1;border-color:rgba(201,47,47,.16);color:var(--red);}
-
-@media (max-width: 430px){
-  #exercise-list{grid-template-columns:1fr;}
-  .exercise-top{flex-direction:column;}
-  .exercise-weight-badge{width:100%;text-align:left;}
-}
-
-
-
-/* ── Progress refresh + set correction ────────────────────────── */
-
-#sec-progress .card{
-  background:linear-gradient(180deg,#fff 0%,#fbf8f5 100%);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:22px;
-  box-shadow:0 14px 28px rgba(26,18,11,.05);
-}
-#sec-progress .card-title{font-size:20px;letter-spacing:.02em;}
-#sec-progress .metrics{gap:10px;}
-#sec-progress .metric{
-  background:linear-gradient(180deg,#fff 0%,#fcf9f7 100%);
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:18px;
-  box-shadow:0 8px 18px rgba(26,18,11,.03);
-}
-#lift-bars{display:grid;grid-template-columns:1fr;gap:12px;}
-.lift-card{
-  background:#fff;
-  border:1px solid rgba(22,22,22,.06);
-  border-radius:18px;
-  padding:14px;
-  box-shadow:0 8px 18px rgba(26,18,11,.03);
-}
-.lift-card-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start;}
-.lift-card-title{font-size:15px;font-weight:700;color:var(--text);}
-.lift-card-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;}
-.lift-card-value{font-family:var(--font-display);font-size:30px;line-height:1;color:var(--text);}
-.lift-progress-track{height:10px;background:#f2ece7;border-radius:999px;overflow:hidden;margin:12px 0 10px;}
-.lift-progress-fill{height:100%;border-radius:999px;transition:width .35s ease;}
-.lift-card-meta{display:flex;justify-content:space-between;gap:8px;font-size:12px;color:var(--muted);}
-
-.review-hero{
-  background:linear-gradient(180deg,#fff7f7 0%,#fff 100%);
-  border:1px solid rgba(198,40,40,.10);
-  border-radius:18px;
-  padding:14px;
-}
-.review-hero-top{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:12px;}
-.review-hero-title{font-size:14px;font-weight:700;color:var(--text);}
-.review-hero-sub{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.45;}
-.review-badge{display:inline-flex;align-items:center;justify-content:center;min-width:82px;padding:8px 10px;border-radius:999px;background:#fff;border:1px solid rgba(198,40,40,.10);color:var(--red);font-size:12px;font-weight:700;}
-.review-grid{gap:10px;}
-.review-cell{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px;}
-.review-note{margin-top:12px;color:#5d544e;line-height:1.6;}
-
-.milestone-grid{grid-template-columns:repeat(2,1fr);gap:10px;}
-.milestone{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px;box-shadow:0 8px 18px rgba(26,18,11,.03);}
-.milestone-note{margin-top:6px;color:#5d544e;line-height:1.6;}
-
-.chip-row{gap:10px;margin-bottom:14px;}
-.chip-btn{box-shadow:0 4px 10px rgba(26,18,11,.03);}
-.chart-box{background:linear-gradient(180deg,#fff 0%,#fcf9f7 100%);border:1px solid rgba(22,22,22,.06);border-radius:18px;padding:14px;}
-.history-detail-row,.history-row{background:#fff;border:1px solid rgba(22,22,22,.06);border-radius:16px;padding:12px 14px;margin-bottom:10px;box-shadow:0 8px 18px rgba(26,18,11,.03);border-bottom:none;}
-.history-detail-row:last-child,.history-row:last-child{margin-bottom:0;}
-.history-detail-main{font-size:14px;font-weight:600;color:var(--text);}
-.history-detail-sub,.history-date{color:var(--muted);}
-
-@media (max-width:420px){
-  .lift-card-value{font-size:26px;}
-}
-
 </style>
 </head>
 <body>
-<div class="app">
+<main class="app">
+  <header class="topbar">
+    <div class="brand">Rack<span>City</span></div>
+    <div class="sync"><span id="sync-label">saved</span><span class="sync-dot" id="sync-dot"></span></div>
+  </header>
 
-  <!-- Top bar -->
-  <div class="topbar">
-    <div class="logo">Strong<span>Lifts</span> AI</div>
-    <div style="display:flex;align-items:center;gap:8px;">
-      <span id="sync-label" style="font-size:12px;color:var(--muted);">saved</span>
-      <div class="sync-dot" id="sync-dot"></div>
-    </div>
-  </div>
+  <section class="hero">
+    <h1>Plate Calculator</h1>
+    <p>Enter your bar weight, available plate pairs, and target weight.</p>
+  </section>
 
-  <!-- Content -->
-  <div class="content">
-
-    <!-- ── TODAY ──────────────────────────────────────────────── -->
-    <div id="sec-today" class="section active">
-      <div class="metrics" id="today-metrics">
-        <div class="metric"><div class="metric-label">Week</div><div class="metric-value" id="m-week">W1</div><div class="metric-sub">Day 1 of 3</div></div>
-        <div class="metric"><div class="metric-label">Workout</div><div class="metric-value" id="m-workout">A</div><div class="metric-sub">Squat focus</div></div>
-        <div class="metric"><div class="metric-label">Streak</div><div class="metric-value" id="m-streak" style="color:var(--green);">0</div><div class="metric-sub">workouts</div></div>
+  <section class="card">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Equipment</div>
+        <div class="card-sub">LBS is the default. Changes save automatically.</div>
       </div>
-
-      <div class="week-grid" id="week-dots"></div>
-
-      <div class="card" id="workout-card">
-        <div class="card-title" id="workout-title">Workout A</div>
-        <div id="exercise-list"></div>
-        <div class="session-tools">
-          <div class="rest-timer"><span>Rest timer</span><strong id="rest-timer-display">03:00</strong></div>
-          <button class="mini-btn" onclick="toggleRestTimer()" id="rest-timer-btn">Start</button>
-          <button class="mini-btn" onclick="resetRestTimer()">Reset</button>
-        </div>
-        <div class="warmup-box collapsed" id="warmup-box">
-          <button class="warmup-toggle" type="button" onclick="toggleWarmups()">
-            <span>Warm-up sets</span>
-            <span class="warmup-toggle-meta" id="warmup-toggle-meta">Show ramp sets</span>
-          </button>
-          <div id="warmup-list"></div>
-        </div>
-        <div id="set-plan" class="set-plan"></div>
-        <div id="log-history" style="margin-top:8px;font-size:12px;color:var(--muted);"></div>
-        <div class="ai-box" id="today-ai-box">
-          <div class="ai-box-label">AI Coach</div>
-          <p id="today-ai-text">Loading your program...</p>
-        </div>
-        <button class="btn" style="margin-top:12px;" onclick="completeWorkout()">
-          Mark workout complete <span style="color:var(--green);">✓</span>
-        </button>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Daily recovery check-in</div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Sleep (hrs)</label><input type="number" id="c-sleep" min="0" max="12" step="0.5" placeholder="e.g. 7.5"></div>
-          <div class="form-group">
-            <label class="form-label" id="bw-label">Body weight (kg)</label>
-            <div class="drum-wrap"><div class="drum-roller" id="drum-c-bw" data-id="c-bw"></div><span class="drum-unit" id="c-bw-unit">kg</span></div>
-            <input type="hidden" id="c-bw" value="">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group"><label class="form-label">Stress (1-5)</label><select id="c-stress"><option value="1">1 - low</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5 - high</option></select></div>
-          <div class="form-group"><label class="form-label">Soreness (1-5)</label><select id="c-soreness"><option value="1">1 - fresh</option><option value="2">2</option><option value="3" selected>3</option><option value="4">4</option><option value="5">5 - wrecked</option></select></div>
-        </div>
-        <button class="btn btn-primary" onclick="saveCheckin()">Save check-in</button>
+      <div class="segmented" aria-label="Units">
+        <button type="button" id="unit-lbs" onclick="setUnit('lbs')">LBS</button>
+        <button type="button" id="unit-kg" onclick="setUnit('kg')">KG</button>
       </div>
     </div>
 
-    <!-- ── PROGRESS ────────────────────────────────────────────── -->
-    <div id="sec-progress" class="section">
-      <div class="metrics">
-        <div class="metric"><div class="metric-label">Workouts</div><div class="metric-value" id="p-total">0</div><div class="metric-sub">all time</div></div>
-        <div class="metric"><div class="metric-label">Squat</div><div class="metric-value" id="p-squat">—</div><div class="metric-sub" data-weight-sub>best kg</div></div>
-        <div class="metric"><div class="metric-label">Deadlift</div><div class="metric-value" id="p-dead">—</div><div class="metric-sub" data-weight-sub>best kg</div></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Lift progress</div>
-        <div id="lift-bars"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Weekly check-in</div>
-        <div id="week-review"><p style="color:var(--muted);font-size:13px;">Log a few workouts and check-ins to unlock a weekly review.</p></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Milestones</div>
-        <div id="milestone-list"><p style="color:var(--muted);font-size:13px;">Complete a few sessions to unlock milestones.</p></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Exercise history</div>
-        <div id="history-tabs" class="chip-row"></div>
-        <div id="history-chart"><p style="color:var(--muted);font-size:13px;">Log workouts to see lift trends.</p></div>
-        <div id="exercise-history-list"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Recent workouts</div>
-        <div id="history-list"><p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p></div>
-      </div>
-    </div>
-    <!-- ── PLATES ─────────────────────────────────────────────── -->
-    <div id="sec-plates" class="section">
-      <div class="card">
-        <div class="card-title">Your plate inventory</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:14px;">Tell us what plates you own — the calculator uses this to tell you exactly what to load.</p>
-        <div class="bar-weight-row" style="flex-direction:column;align-items:flex-start;gap:6px;">
-          <label style="font-size:13px;color:var(--muted);">Bar weight</label>
-          <div class="drum-wrap" style="width:100%;">
-            <div class="drum-roller" id="drum-bar-weight" data-id="bar-weight"></div>
-            <span class="drum-unit" id="bar-unit-label">lbs</span>
-          </div>
-          <input type="hidden" id="bar-weight" value="45">
+    <div class="control-row">
+      <div class="field">
+        <label for="bar-weight">Bar weight</label>
+        <div class="stepper">
+          <button type="button" aria-label="Decrease bar weight" onclick="changeBar(-1)">−</button>
+          <input id="bar-weight" type="number" inputmode="decimal" aria-label="Bar weight">
+          <button type="button" aria-label="Increase bar weight" onclick="changeBar(1)">+</button>
         </div>
-        <div class="plate-input-grid" id="plate-inputs"></div>
-        <p style="font-size:12px;color:var(--muted);margin-top:4px;">Counts are total plates you own (both sides use half each).</p>
       </div>
-
-      <div class="card">
-        <div class="card-title">Today's plate loads</div>
-        <p style="font-size:13px;color:var(--muted);margin-bottom:12px;">Based on your current working weights and the plates you have.</p>
-        <div id="plate-results"></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title">Custom calculator</div>
-        <div style="margin-bottom:12px;">
-          <label class="drum-label">Target weight</label>
-          <div class="drum-wrap">
-            <div class="drum-roller" id="drum-custom-weight" data-id="custom-weight"></div>
-            <span class="drum-unit" id="custom-unit-label">lbs</span>
-          </div>
-          <input type="hidden" id="custom-weight" value="0">
+      <div class="field">
+        <label>Inventory</label>
+        <div style="height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 4px;color:var(--muted);font-size:12px;">
+          <span>Matching pairs</span>
+          <button type="button" class="reset-link" onclick="resetInventory()">Clear all</button>
         </div>
-        <div id="custom-result"></div>
       </div>
     </div>
 
-    <!-- ── SETTINGS ────────────────────────────────────────────── -->
-    <div id="sec-settings" class="section">
-      <div class="card">
-        <div class="card-title">Your profile</div>
-        <div class="form-group">
-          <label class="form-label" id="bw-drum-label">Body weight (kg)</label>
-          <div class="drum-wrap">
-            <div class="drum-roller" id="drum-s-bw" data-id="s-bw"></div>
-            <span class="drum-unit" id="s-bw-unit">kg</span>
-          </div>
-          <input type="hidden" id="s-bw" value="85">
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Training days/week</label>
-            <select id="s-days"><option>2</option><option selected>3</option><option>4</option></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Units</label>
-            <select id="s-units"><option value="kg">KG</option><option value="lbs">LBS</option></select>
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="form-group">
-            <label class="form-label">Goal</label>
-            <select id="s-goal"><option selected>Recomposition</option><option>Lean bulk</option><option>Cut</option></select>
-          </div>
-          <div class="form-group">
-            <label class="form-label">Training age</label>
-            <select id="s-age"><option>Beginner</option><option selected>Intermediate</option><option>Advanced</option></select>
-          </div>
-        </div>
-        <button class="btn btn-primary" onclick="saveSettings()">Save profile</button>
-      </div>
+    <div class="plates-grid" id="plate-inputs"></div>
+    <div class="inventory-note">Each count is a matching pair: one plate for the left side and one for the right.</div>
+  </section>
 
-      <div class="card">
-        <div class="card-title">AI features</div>
-        <div class="toggle-row"><div><div class="toggle-label">Adaptive progression</div><div class="toggle-desc">AI adjusts weight increments</div></div><label class="tog"><input type="checkbox" id="t-adapt" checked><span class="tog-slider"></span></label></div>
-        <div class="toggle-row"><div><div class="toggle-label">Smart deload detection</div><div class="toggle-desc">Auto-deloads on stalls</div></div><label class="tog"><input type="checkbox" id="t-deload" checked><span class="tog-slider"></span></label></div>
-        <div class="toggle-row"><div><div class="toggle-label">Calorie cycling</div><div class="toggle-desc">Higher carbs on training days</div></div><label class="tog"><input type="checkbox" id="t-cycling" checked><span class="tog-slider"></span></label></div>
-        <div class="toggle-row"><div><div class="toggle-label">Weekly meal plan</div><div class="toggle-desc">AI generates plan every Sunday</div></div><label class="tog"><input type="checkbox" id="t-mealplan" checked><span class="tog-slider"></span></label></div>
-      </div>
-
-      <div class="card">
-        <div class="card-title" id="starting-weights-title">Starting weights (kg)</div>
-        <div class="form-row">
-          <div class="drum-field">
-            <label class="drum-label">Squat</label>
-            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-squat" data-id="sw-squat"></div><span class="drum-unit" id="sw-squat-unit">kg</span></div>
-            <input type="hidden" id="sw-squat" value="60">
-          </div>
-          <div class="drum-field">
-            <label class="drum-label">Bench press</label>
-            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-bench" data-id="sw-bench"></div><span class="drum-unit" id="sw-bench-unit">kg</span></div>
-            <input type="hidden" id="sw-bench" value="40">
-          </div>
-        </div>
-        <div class="form-row">
-          <div class="drum-field">
-            <label class="drum-label">Deadlift</label>
-            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-dead" data-id="sw-dead"></div><span class="drum-unit" id="sw-dead-unit">kg</span></div>
-            <input type="hidden" id="sw-dead" value="80">
-          </div>
-          <div class="drum-field">
-            <label class="drum-label">Overhead press</label>
-            <div class="drum-wrap"><div class="drum-roller" id="drum-sw-ohp" data-id="sw-ohp"></div><span class="drum-unit" id="sw-ohp-unit">kg</span></div>
-            <input type="hidden" id="sw-ohp" value="30">
-          </div>
-        </div>
-        <div class="drum-field" style="max-width:50%;">
-          <label class="drum-label">Barbell row</label>
-          <div class="drum-wrap"><div class="drum-roller" id="drum-sw-row" data-id="sw-row"></div><span class="drum-unit" id="sw-row-unit">kg</span></div>
-          <input type="hidden" id="sw-row" value="40">
-        </div>
-        <button class="btn btn-primary" style="margin-top:14px;" onclick="saveWeights()">Save weights</button>
-      </div>
-
-      <div class="card" style="margin-top:8px;">
-        <div class="card-title">Data</div>
-        <button class="btn" onclick="exportData()">Export all data (JSON) ↗</button>
-        <button class="btn" style="color:var(--red);border-color:var(--red);" onclick="confirmReset()">Reset all data</button>
+  <section class="card target-card">
+    <div class="card-head" style="margin-bottom:8px">
+      <div>
+        <div class="card-title">Target weight</div>
+        <div class="card-sub">Adjust in the smallest standard load increment.</div>
       </div>
     </div>
+    <div class="target-wrap">
+      <button type="button" aria-label="Decrease target weight" onclick="changeTarget(-1)">−</button>
+      <div class="target-input-wrap">
+        <input id="target-weight" type="number" inputmode="decimal" aria-label="Target weight">
+        <span class="target-unit" id="target-unit">lbs</span>
+      </div>
+      <button type="button" aria-label="Increase target weight" onclick="changeTarget(1)">+</button>
+    </div>
+    <div class="quick-targets" id="quick-targets"></div>
+  </section>
 
-  </div><!-- /content -->
+  <section class="card" aria-live="polite">
+    <div class="card-head">
+      <div>
+        <div class="card-title">Load this bar</div>
+        <div class="card-sub">Plates shown are per side unless noted otherwise.</div>
+      </div>
+    </div>
+    <div id="result"><div class="result-empty">Add at least one plate pair to calculate a load.</div></div>
+  </section>
 
-  <!-- Bottom nav -->
-  <nav class="nav">
-    <button class="nav-btn active" id="nav-today" onclick="showSection('today')">
-      <span class="nav-icon">⚡</span>Today
-    </button>
-    <button class="nav-btn" id="nav-progress" onclick="showSection('progress')">
-      <span class="nav-icon">📈</span>Progress
-    </button>
-    <button class="nav-btn" id="nav-plates" onclick="showSection('plates')">
-      <span class="nav-icon">🏋️</span>Plates
-    </button>
-    <button class="nav-btn" id="nav-settings" onclick="showSection('settings')">
-      <span class="nav-icon">⚙️</span>Settings
-    </button>
-  </nav>
-</div>
-
-<!-- Toast -->
+  <div class="footer-note">Settings save automatically.</div>
+</main>
 <div class="toast" id="toast"></div>
 
 <script>
-// ── HAPTIC ENGINE ──────────────────────────────────────────────────────────────
-//
-// iPhone: navigator.vibrate() is not supported. We use the Web Audio API to
-// generate a near-silent click burst that triggers the Taptic Engine on iOS
-// when the page is running as a PWA / saved to home screen. In Safari browser
-// it falls back silently. On Android Chrome, navigator.vibrate() works natively.
-//
-// Pattern strengths:
-//   tick    — drum roller every notch          (lightest, 1ms)
-//   light   — plate +/−, toggle, nav tap       (short, 5ms)
-//   medium  — set logged, check-in saved       (10ms)
-//   heavy   — workout complete, PR             (2×30ms, gap 50ms)
-//   error   — validation fail                  (3×10ms buzz)
-
-const Haptic = (() => {
-  // AudioContext shared instance — created once on first user gesture
-  let _ctx = null;
-
-  function _ctx_get() {
-    if (!_ctx) {
-      try { _ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch(e) {}
-    }
-    return _ctx;
-  }
-
-  // Play a very short square-wave burst via Web Audio.
-  // Frequency 200–400 Hz at very low gain (~0.01) produces a physical
-  // membrane click on iPhone speakers that feels like haptic feedback.
-  function _audioClick(durationMs = 2, freq = 220, gain = 0.012) {
-    const ctx = _ctx_get();
-    if (!ctx) return;
-    try {
-      const osc = ctx.createOscillator();
-      const env = ctx.createGain();
-      osc.connect(env);
-      env.connect(ctx.destination);
-      osc.type = 'square';
-      osc.frequency.value = freq;
-      env.gain.setValueAtTime(gain, ctx.currentTime);
-      env.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + durationMs / 1000);
-      osc.start(ctx.currentTime);
-      osc.stop(ctx.currentTime + durationMs / 1000 + 0.01);
-    } catch(e) {}
-  }
-
-  // Android: use navigator.vibrate if available
-  function _vib(pattern) {
-    if (navigator.vibrate) navigator.vibrate(pattern);
-  }
-
-  // Detect iOS (Safari / WKWebView / PWA)
-  const isIOS = /iP(hone|ad|od)/.test(navigator.userAgent) ||
-    (navigator.platform === 'MacIntel' && navigator.maxTouchPoints > 1);
-
-  function tick() {
-    if (isIOS) { _audioClick(1, 280, 0.008); }
-    else        { _vib(1); }
-  }
-
-  function light() {
-    if (isIOS) { _audioClick(3, 220, 0.01); }
-    else        { _vib(5); }
-  }
-
-  function medium() {
-    if (isIOS) { _audioClick(6, 180, 0.014); }
-    else        { _vib(12); }
-  }
-
-  function heavy() {
-    if (isIOS) {
-      _audioClick(8, 140, 0.018);
-      setTimeout(() => _audioClick(8, 140, 0.018), 80);
-    } else {
-      _vib([30, 50, 30]);
-    }
-  }
-
-  function error() {
-    if (isIOS) {
-      _audioClick(4, 320, 0.01);
-      setTimeout(() => _audioClick(4, 320, 0.01), 80);
-      setTimeout(() => _audioClick(4, 320, 0.01), 160);
-    } else {
-      _vib([10, 40, 10, 40, 10]);
-    }
-  }
-
-  // Must be called once on the first user gesture to unlock AudioContext on iOS
-  function unlock() {
-    const ctx = _ctx_get();
-    if (ctx && ctx.state === 'suspended') {
-      ctx.resume().catch(() => {});
-    }
-  }
-
-  return { tick, light, medium, heavy, error, unlock };
-})();
-
-// Unlock AudioContext on first touch anywhere on the page
-document.addEventListener('touchstart', () => Haptic.unlock(), { once: true, passive: true });
-document.addEventListener('mousedown',  () => Haptic.unlock(), { once: true, passive: true });
-
-// ── CONFIG ──────────────────────────────────────────────────────────────────
 const API = 'https://stronglifts-api.stronglifts-api.workers.dev';
-const KG_TO_LB = 2.20462;
-const LB_TO_KG = 1 / KG_TO_LB;
 
-function resolveUserKey() {
-  const params = new URLSearchParams(window.location.search);
-  const fromQuery = params.get('uid');
-  if (fromQuery) {
-    localStorage.setItem('sl_user_key', fromQuery);
-    return fromQuery;
-  }
+const PLATES = {
+  lbs: [45, 35, 25, 10, 5, 2.5],
+  kg:  [20, 15, 10, 5, 2.5, 1.25],
+};
+const PLATE_COLORS = {
+  45:'#1f6ed4',35:'#b49a13',25:'#2f9e44',20:'#1f6ed4',15:'#b49a13',10:'#8a8a8a',5:'#c92f2f',2.5:'#555',1.25:'#333'
+};
+const PLATE_HEIGHTS = {45:58,35:52,25:46,20:58,15:52,10:36,5:29,2.5:23,1.25:18};
+const DEFAULTS = {
+  units:'lbs',
+  inventory:{lbs:[0,0,0,0,0,0],kg:[0,0,0,0,0,0]},
+  barWeight:{lbs:45,kg:20},
+  target:{lbs:135,kg:60},
+};
+
+let rawState = {};
+let state = JSON.parse(JSON.stringify(DEFAULTS));
+let saveTimer = null;
+
+function resolveUserKey(){
+  const params = new URLSearchParams(location.search);
+  const queryKey = params.get('uid');
+  if(queryKey){ localStorage.setItem('sl_user_key',queryKey); return queryKey; }
   const cached = localStorage.getItem('sl_user_key');
-  if (cached) return cached;
-  const generated = `user_${Math.random().toString(36).slice(2, 10)}`;
-  localStorage.setItem('sl_user_key', generated);
+  if(cached) return cached;
+  const generated = `user_${Math.random().toString(36).slice(2,10)}`;
+  localStorage.setItem('sl_user_key',generated);
   return generated;
 }
 const USER_KEY = resolveUserKey();
 
-const defaultState = {
-  profile: { bw: 85, days: 3, goal: 'Recomposition', age: 'Intermediate' },
-  weights: { squat: 60, bench: 40, dead: 80, ohp: 30, row: 40 },
-  progress: {
-    squat: { currentKg: 60, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
-    bench: { currentKg: 40, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
-    dead: { currentKg: 80, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
-    ohp: { currentKg: 30, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
-    row: { currentKg: 40, failCount: 0, completedSessions: 0, deloads: 0, lastOutcome: 'new' },
-  },
-  workouts: [],
-  currentSets: [],
-  settings: { adapt: true, deload: true, cycling: true, mealplan: true, units: 'kg' },
-  checkins: [],
-  coach: { style: 'mentzer' },
-  plates: [0, 0, 4, 4, 4, 4],
-  barWeightLbs: 45,
-  barWeight: { lbs: 45, kg: 20 },
-};
+function clone(v){ return JSON.parse(JSON.stringify(v)); }
+function unit(){ return state.units === 'kg' ? 'kg' : 'lbs'; }
+function sizes(){ return PLATES[unit()]; }
+function pairs(){ return state.inventory[unit()]; }
+function step(){ const s=sizes(); return s[s.length-1]*2; }
+function barStep(){ return unit()==='lbs' ? 5 : 2.5; }
+function formatNumber(v){ return Number.isInteger(v) ? String(v) : String(Math.round(v*100)/100); }
+function vibrate(ms=6){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
 
-let state = JSON.parse(JSON.stringify(defaultState));
-let restTimer = { duration: 180, remaining: 180, interval: null, running: false };
-let selectedHistoryLift = 'squat';
-let warmupsOpen = false;
-let _appReady = false; // guards haptic from firing on init
+function normalizeLoaded(data={}){
+  rawState = data && typeof data === 'object' ? data : {};
+  const savedCalculatorUnit = data.calculator?.units;
+  state.units = savedCalculatorUnit === 'kg' || savedCalculatorUnit === 'lbs' ? savedCalculatorUnit : 'lbs';
 
-// ── PERSISTENCE ─────────────────────────────────────────────────────────────
-async function saveToCloud(partial = {}) {
-  setSyncState('syncing');
-  try {
-    const payload = { ...state, ...partial, updatedAt: Date.now() };
-    const r = await fetch(`${API}/data/${USER_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!r.ok) throw new Error(r.status);
-    setSyncState('ok');
-    localStorage.setItem('sl_cache', JSON.stringify(payload));
-  } catch (e) {
-    setSyncState('err');
-    localStorage.setItem('sl_cache', JSON.stringify({ ...state, updatedAt: Date.now() }));
-    showToast('Saved locally (offline mode)');
-  }
-}
-
-async function loadFromCloud() {
-  setSyncState('syncing');
-  try {
-    const r = await fetch(`${API}/data/${USER_KEY}`);
-    if (r.ok) {
-      const { data } = await r.json();
-      state = normalizeState({ ...state, ...data });
-      localStorage.setItem('sl_cache', JSON.stringify(state));
-      setSyncState('ok');
-    } else if (r.status === 404) {
-      setSyncState('ok');
-    } else throw new Error(r.status);
-  } catch (e) {
-    const cached = localStorage.getItem('sl_cache');
-    if (cached) {
-      state = normalizeState({ ...state, ...JSON.parse(cached) });
-      showToast('Offline — using cached data');
-    }
-    setSyncState('err');
-  }
-}
-
-function normalizeState(data) {
-  const merged = {
-    ...defaultState,
-    ...data,
-    profile: { ...defaultState.profile, ...(data.profile || {}) },
-    weights: { ...defaultState.weights, ...(data.weights || {}) },
-    settings: { ...defaultState.settings, ...(data.settings || {}) },
-    coach: { ...defaultState.coach, ...(data.coach || {}) },
-    plates: Array.isArray(data.plates) ? data.plates : defaultState.plates,
-    barWeightLbs: Number.isFinite(data.barWeightLbs) ? data.barWeightLbs : 45,
-    barWeight: (data.barWeight && Number.isFinite(data.barWeight.lbs)) ? data.barWeight : { lbs: (data.barWeightLbs || 45), kg: 20 },
-    workouts: Array.isArray(data.workouts) ? data.workouts : [],
-    currentSets: Array.isArray(data.currentSets) ? data.currentSets : [],
-    checkins: Array.isArray(data.checkins) ? data.checkins : [],
-    progress: {},
-  };
-  Object.keys(defaultState.progress).forEach(key => {
-    const seeded = data.progress?.[key] || {};
-    merged.progress[key] = { ...defaultState.progress[key], ...seeded };
-    if (!Number.isFinite(merged.progress[key].currentKg)) {
-      merged.progress[key].currentKg = merged.weights[key];
-    }
-  });
-  return merged;
-}
-
-function seedProgressFromWeights() {
-  Object.keys(state.weights).forEach(key => {
-    if (!state.progress[key]) state.progress[key] = { ...defaultState.progress[key] };
-    if (!Number.isFinite(state.progress[key].currentKg)) state.progress[key].currentKg = state.weights[key];
-  });
-}
-
-function setSyncState(s) {
-  const dot = document.getElementById('sync-dot');
-  const lbl = document.getElementById('sync-label');
-  dot.className = 'sync-dot' + (s === 'syncing' ? ' syncing' : s === 'err' ? ' err' : '');
-  lbl.textContent = s === 'syncing' ? 'saving...' : s === 'err' ? 'offline' : 'saved';
-}
-
-// ── UNITS ───────────────────────────────────────────────────────────────────
-function getUnit() {
-  return state.settings?.units === 'lbs' ? 'lbs' : 'kg';
-}
-function displayDigits() {
-  return getUnit() === 'lbs' ? 0 : 1;
-}
-function roundToStep(value, step) {
-  return Math.round(value / step) * step;
-}
-function getIncrementKg(key) {
-  if (getUnit() === 'lbs') return ['squat', 'dead'].includes(key) ? 10 * LB_TO_KG : 5 * LB_TO_KG;
-  return ['squat', 'dead'].includes(key) ? 5 : 2.5;
-}
-function kgToUnit(kg) {
-  return getUnit() === 'lbs' ? kg * KG_TO_LB : kg;
-}
-function formatWeight(kg, digits = displayDigits()) {
-  if (kg == null || Number.isNaN(kg)) return '—';
-  const val = kgToUnit(kg);
-  const rounded = digits === 0 ? Math.round(val) : Math.round(val * 10) / 10;
-  return `${rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(digits)} ${getUnit()}`;
-}
-function formatWeightValue(kg, digits = displayDigits()) {
-  if (kg == null || Number.isNaN(kg)) return '';
-  const val = kgToUnit(kg);
-  const rounded = digits === 0 ? Math.round(val) : Math.round(val * 10) / 10;
-  return rounded % 1 === 0 ? rounded.toFixed(0) : rounded.toFixed(digits);
-}
-function roundWorkoutKg(kg, key) {
-  return roundToStep(kg, getIncrementKg(key));
-}
-function sanitizeEnteredWeightKg(val, key, fallback) {
-  if (!Number.isFinite(val)) return fallback;
-  if (getUnit() === 'lbs') return Math.round((roundToStep(val, 5) * LB_TO_KG) * 1000) / 1000;
-  return roundToStep(val, 2.5);
-}
-function updateUnitLabels() {
-  buildPlateInputs();
-  calcAllPlates();
-  calcCustomPlates();
-  const unit = getUnit();
-  const bwLabel = document.getElementById('bw-label');
-  if (bwLabel) bwLabel.textContent = `Body weight (${unit})`;
-  const profileBwLabel = document.querySelector('#s-bw')?.closest('.form-group')?.querySelector('.form-label');
-  if (profileBwLabel) profileBwLabel.textContent = `Body weight (${unit})`;
-  const startLabel = document.getElementById('starting-weights-title');
-  if (startLabel) startLabel.textContent = `Starting weights (${unit})`;
-  document.querySelectorAll('[data-weight-sub]').forEach(el => el.textContent = `best ${unit}`);
-  const bwCheckinLabel = document.querySelector('#c-bw')?.closest('.form-group')?.querySelector('.form-label');
-  if (bwCheckinLabel) bwCheckinLabel.textContent = `Body weight (${unit})`;
-  const bwStep = unit === 'lbs' ? '1' : '0.5';
-  ['s-bw','c-bw'].forEach(id => {
-    const input = document.getElementById(id);
-    if (input) input.step = bwStep;
-  });
-  ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].forEach(id => {
-    const input = document.getElementById(id);
-    if (input) input.step = unit === 'lbs' ? '5' : '2.5';
-  });
-  // Auto-convert displayed values when unit changes
-  populateSettings();
-  rebuildDrumsForUnit();
-}
-
-
-// ── NAVIGATION ───────────────────────────────────────────────────────────────
-function showSection(name) {
-  Haptic.light();
-  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  document.getElementById('sec-' + name).classList.add('active');
-  document.getElementById('nav-' + name).classList.add('active');
-  if (name === 'progress') renderProgress();
-  if (name === 'plates') calcAllPlates();
-}
-
-// ── WORKOUT LOGIC ─────────────────────────────────────────────────────────────
-const WORKOUT_A = [
-  { key: 'squat',  name: 'Squat',        setsTarget: 5, repsTarget: 5, label: '5×5' },
-  { key: 'bench',  name: 'Bench press',  setsTarget: 5, repsTarget: 5, label: '5×5' },
-  { key: 'row',    name: 'Barbell row',  setsTarget: 5, repsTarget: 5, label: '5×5' },
-];
-const WORKOUT_B = [
-  { key: 'squat',  name: 'Squat',          setsTarget: 5, repsTarget: 5, label: '5×5' },
-  { key: 'ohp',    name: 'Overhead press', setsTarget: 5, repsTarget: 5, label: '5×5' },
-  { key: 'dead',   name: 'Deadlift',       setsTarget: 1, repsTarget: 5, label: '1×5' },
-];
-
-function currentWorkoutType() {
-  return state.workouts.length % 2 === 0 ? 'A' : 'B';
-}
-function getWorkoutPlan(type = currentWorkoutType()) {
-  return type === 'A' ? WORKOUT_A : WORKOUT_B;
-}
-function currentWeights() {
-  seedProgressFromWeights();
-  return Object.fromEntries(Object.keys(state.progress).map(key => [key, state.progress[key].currentKg]));
-}
-function buildPlannedSets() {
-  const weights = currentWeights();
-  const plan = [];
-  getWorkoutPlan().forEach(ex => {
-    for (let i = 1; i <= ex.setsTarget; i++) {
-      plan.push({
-        id: `${ex.key}-${i}`,
-        key: ex.key,
-        ex: ex.name,
-        setNumber: i,
-        totalSets: ex.setsTarget,
-        repsTarget: ex.repsTarget,
-        plannedKg: weights[ex.key],
-      });
-    }
-  });
-  return plan;
-}
-function getLoggedSetById(id) {
-  return state.currentSets.find(s => s.id === id);
-}
-function getExerciseOutcome(key) {
-  const plan = getWorkoutPlan().find(ex => ex.key === key);
-  const sets = state.currentSets.filter(s => s.key === key);
-  const success = sets.length === plan.setsTarget && sets.every(s => s.completed && s.reps >= plan.repsTarget);
-  return { success, setsLogged: sets.length, setsTarget: plan.setsTarget, failedSets: sets.filter(s => !s.completed).length };
-}
-function getOutcomeBadge(outcome) {
-  if (outcome === 'success') return '<span class="status-chip status-success">Progressing</span>';
-  if (outcome === 'deload') return '<span class="status-chip status-deload">Deload next time</span>';
-  if (outcome === 'repeat') return '<span class="status-chip status-repeat">Repeat weight</span>';
-  return '<span class="status-chip status-success">Ready</span>';
-}
-function buildWarmupSets(exKey, workKg) {
-  const barKg = exKey === 'dead' ? 60 * LB_TO_KG : 20;
-  const warmups = [];
-  const add = (pct, reps, note='') => {
-    const raw = Math.max(barKg, roundWorkoutKg(workKg * pct, exKey));
-    if (!warmups.find(w => Math.abs(w.kg - raw) < 0.01)) warmups.push({ kg: raw, reps, note });
-  };
-  if (workKg <= barKg + getIncrementKg(exKey)) {
-    warmups.push({ kg: Math.max(barKg, roundWorkoutKg(workKg, exKey)), reps: exKey === 'dead' ? 5 : 8, note: '1 easy ramp set' });
-    return warmups;
-  }
-  add(0.4, 5, 'Groove the movement');
-  add(0.6, 5, 'Controlled tempo');
-  add(0.75, 3, 'Move with intent');
-  if (exKey !== 'dead') add(0.9, 1, 'Primer single');
-  return warmups.sort((a,b) => a.kg - b.kg);
-}
-
-// ── PHASE 3 DATA ────────────────────────────────────────────────────────────
-function todayKey() {
-  return new Date().toISOString().slice(0, 10);
-}
-function latestCheckin() {
-  return [...state.checkins].sort((a, b) => b.date.localeCompare(a.date))[0] || null;
-}
-function weeklyStats() {
-  const now = new Date();
-  const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-  const workouts = state.workouts.filter(w => new Date(w.date) >= weekAgo);
-  const checkins = state.checkins.filter(c => new Date(c.date) >= weekAgo);
-  const avgSleep = checkins.length ? checkins.reduce((a, c) => a + (Number(c.sleep) || 0), 0) / checkins.length : 0;
-  const avgStress = checkins.length ? checkins.reduce((a, c) => a + (Number(c.stress) || 0), 0) / checkins.length : 0;
-  const avgSoreness = checkins.length ? checkins.reduce((a, c) => a + (Number(c.soreness) || 0), 0) / checkins.length : 0;
-  const bwPoints = checkins.filter(c => c.bw).map(c => Number(c.bw));
-  const bwDelta = bwPoints.length >= 2 ? bwPoints[bwPoints.length - 1] - bwPoints[0] : 0;
-  return { workouts, checkins, avgSleep, avgStress, avgSoreness, bwDelta };
-}
-function bodyweightTrendText() {
-  const stats = weeklyStats();
-  const unit = getUnit();
-  const delta = unit === 'lbs' ? stats.bwDelta * KG_TO_LB : stats.bwDelta;
-  if (Math.abs(delta) < (unit === 'lbs' ? 0.5 : 0.2)) return 'flat';
-  return delta > 0 ? `up ${delta.toFixed(unit === 'lbs' ? 1 : 1)} ${unit}` : `down ${Math.abs(delta).toFixed(unit === 'lbs' ? 1 : 1)} ${unit}`;
-}
-
-function generateCoachMessage() {
-  const type = currentWorkoutType();
-  const week = Math.floor(state.workouts.length / 3) + 1;
-  const last = latestCheckin();
-  const stats = weeklyStats();
-  const recent = state.workouts.slice(-3).flatMap(w => w.exerciseResults || []);
-  const repeats = recent.filter(r => r.outcome === 'repeat').length;
-  const deloads = recent.filter(r => r.outcome === 'deload').length;
-  const poorRecovery = last && ((Number(last.sleep) || 0) < 6.5 || Number(last.stress) >= 4 || Number(last.soreness) >= 4);
-  const goal = state.profile.goal;
-
-  if (poorRecovery) {
-    return `Train with precision, not emotion. Recovery is compromised today, so extend rest, keep your form surgical, and do not confuse fatigue with productive effort.`;
-  }
-  if (deloads) {
-    return `A deload is not weakness. It is the price paid for dishonesty in recovery or consistency. Respect the reset, then rebuild with violence and discipline.`;
-  }
-  if (repeats >= 2) {
-    return `You are flirting with stagnation. Stop leaking effort between sets, own the rest periods, and make every work set look like a statement.`;
-  }
-  if (goal === 'Cut' && stats.bwDelta >= 0) {
-    return `The scale is not cooperating for a cut. Keep intensity high in the gym, but tighten calories with discipline. Muscle is preserved by effort, not by excuses.`;
-  }
-  if (goal === 'Lean bulk' && stats.bwDelta <= 0 && stats.workouts.length >= 2) {
-    return `You are training hard enough to justify more fuel. Bodyweight is flat, so earn growth: add a small calorie surplus and make today's work sets decisive.`;
-  }
-  if (stats.avgSleep >= 7.5 && stats.workouts.length >= 2) {
-    return `Recovery is strong. This is when progress is taken, not hoped for. Hit the prescribed work and leave nothing ambiguous in your final reps.`;
-  }
-  return `Week ${week}, workout ${type}. The mission is simple: fewer excuses, more output. Put all available effort into the hardest honest reps and let consistency compound.`;
-}
-
-function weeklyReviewText(stats) {
-  const goal = state.profile.goal;
-  if (stats.avgSleep && stats.avgSleep < 6.5) return 'Recovery is the bottleneck this week. Reduce lifestyle friction, protect sleep, and keep your work sets brutally focused.';
-  if (goal === 'Lean bulk' && stats.bwDelta <= 0 && stats.workouts.length >= 2) return 'Training volume is present, but growth is not. Add a small calorie surplus and keep protein fixed.';
-  if (goal === 'Cut' && stats.bwDelta >= 0.2) return 'The cut needs more discipline. Tighten calorie intake before you blame the program.';
-  if (stats.workouts.length >= state.profile.days) return 'You matched the training target this week. Keep the standard high and repeat the process.';
-  return 'Your next breakthrough is hidden in routine. Hit your planned sessions before changing the plan.';
-}
-
-function renderWarmups() {
-  const weights = currentWeights();
-  const html = getWorkoutPlan().map(ex => {
-    const warmups = buildWarmupSets(ex.key, weights[ex.key]);
-    const outcome = state.progress[ex.key]?.lastOutcome || 'new';
-    return `
-      <div class="warmup-group">
-        <div class="warmup-row warmup-row-head">
-          <div>
-            <div class="warmup-lift">${ex.name}</div>
-            <div class="warmup-note">Work sets at ${formatWeight(weights[ex.key])} · ${ex.label}</div>
-          </div>
-          <div>${getOutcomeBadge(outcome)}</div>
-        </div>
-        ${warmups.map(w => `<div class="warmup-row"><span>${formatWeight(w.kg)} × ${w.reps}</span><span class="warmup-note">${w.note}</span></div>`).join('')}
-      </div>`;
-  }).join('');
-  document.getElementById('warmup-list').innerHTML = html;
-  const meta = document.getElementById('warmup-toggle-meta');
-  if (meta) meta.textContent = warmupsOpen ? 'Hide ramp sets' : 'Show ramp sets';
-  syncWarmupBox();
-}
-
-function syncWarmupBox() {
-  const box = document.getElementById('warmup-box');
-  if (!box) return;
-  box.classList.toggle('collapsed', !warmupsOpen);
-}
-
-function toggleWarmups(forceOpen) {
-  if (typeof forceOpen === 'boolean') warmupsOpen = forceOpen;
-  else warmupsOpen = !warmupsOpen;
-  Haptic.light();
-  const meta = document.getElementById('warmup-toggle-meta');
-  if (meta) meta.textContent = warmupsOpen ? 'Hide ramp sets' : 'Show ramp sets';
-  syncWarmupBox();
-}
-
-function renderToday() {
-  const type = currentWorkoutType();
-  const wts = currentWeights();
-  const exercises = getWorkoutPlan(type);
-  const week = Math.floor(state.workouts.length / 3) + 1;
-  const streak = state.workouts.length;
-
-  document.getElementById('m-week').textContent = 'W' + week;
-  document.getElementById('m-workout').textContent = type;
-  document.getElementById('m-streak').textContent = streak;
-  document.getElementById('workout-title').textContent = `Workout ${type} · ${exercises.length} lifts`;
-
-  const days = ['M','T','W','T','F','S','S'];
-  const today = new Date().getDay();
-  const dotMap = [1,2,3,4,5,6,0];
-  const todayIdx = dotMap.indexOf(today);
-  document.getElementById('week-dots').innerHTML = days.map((d, i) => {
-    let cls = 'dot-future';
-    if (i < todayIdx) cls = i % 2 === 0 ? 'dot-done' : 'dot-rest';
-    else if (i === todayIdx) cls = 'dot-today';
-    return `<div><div class="wday-name">${d}</div><div class="wday-dot ${cls}">${cls === 'dot-done' ? (i%4===0?'A':'B') : '—'}</div></div>`;
-  }).join('');
-
-  document.getElementById('exercise-list').innerHTML = exercises.map(ex => {
-    const prog = state.progress[ex.key];
-    const failText = prog.failCount ? ` · misses ${prog.failCount}/3` : '';
-    const statusText = prog.lastOutcome === 'deload' ? 'rebuild block' : prog.lastOutcome === 'repeat' ? 'repeat weight' : 'ready to progress';
-    return `
-      <div class="ex-row">
-        <div>
-          <div class="ex-name">${ex.name}</div>
-          <div class="ex-detail">${ex.label}${failText}</div>
-        </div>
-        <div style="text-align:right;">
-          <div class="ex-weight">${formatWeight(wts[ex.key])}</div>
-          <div class="ex-sets">${statusText}</div>
-        </div>
-      </div>
-    `;
-  }).join('');
-
-  renderWarmups();
-  renderPlannedSets();
-  renderSessionLog();
-  document.getElementById('today-ai-text').textContent = generateCoachMessage();
-  populateCheckin();
-}
-
-function renderPlannedSets() {
-  const workout = getWorkoutPlan();
-  const weights = currentWeights();
-  const html = workout.map(ex => {
-    const loggedForLift = state.currentSets.filter(s => s.key === ex.key).length;
-    const sets = Array.from({ length: ex.setsTarget }, (_, idx) => {
-      const id = `${ex.key}-${idx + 1}`;
-      const logged = getLoggedSetById(id);
-      const isActive = !logged && idx === loggedForLift;
-      const cls = logged ? (logged.completed ? 'done' : 'failed') : (isActive ? 'active' : 'pending');
-      const label = logged ? String(logged.reps) : `<span class="set-pill-index">${idx + 1}</span>`;
-      return `<button type="button" class="set-pill ${cls}" title="Set ${idx + 1}" onclick="cycleSetReps('${ex.key}', ${idx + 1})">${label}</button>`;
-    }).join('');
-    const nextSet = loggedForLift + 1;
-    const complete = nextSet > ex.setsTarget;
-    const nextLabel = complete ? 'All sets logged — finish strong.' : `Tap the next circle to log reps for set ${nextSet}/${ex.setsTarget}.`;
-    return `
-      <div class="exercise-card ${complete ? 'complete-card' : ''}">
-        <div class="exercise-top">
-          <div class="exercise-copy">
-            <div class="exercise-title">${ex.name}</div>
-            <div class="exercise-meta">${ex.label} · ${loggedForLift}/${ex.setsTarget} sets logged</div>
-            <div class="exercise-next">${nextLabel}</div>
-          </div>
-          <div class="exercise-weight-badge">
-            <strong>${formatWeight(weights[ex.key])}</strong>
-            <span>work weight</span>
-          </div>
-        </div>
-        <div class="set-strip">${sets}</div>
-        <div class="set-hint">Tap a set circle to cycle reps from full completion down to zero, then back to full.</div>
-      </div>`;
-  }).join('');
-  document.getElementById('set-plan').innerHTML = html;
-}
-
-function renderSessionLog() {
-  const el = document.getElementById('log-history');
-  if (!state.currentSets.length) { el.textContent = ''; return; }
-  el.innerHTML = state.currentSets.slice(-6).map(s =>
-    `<span style="margin-right:12px;">${s.completed ? '✓' : '!'} ${s.ex}: ${formatWeight(s.kg)} × ${s.reps}</span>`
-  ).join('');
-}
-
-function cycleSetReps(key, setNumber) {
-  const ex = getWorkoutPlan().find(item => item.key === key);
-  if (!ex) return;
-  const id = `${key}-${setNumber}`;
-  const existing = getLoggedSetById(id);
-  const loggedCount = state.currentSets.filter(s => s.key === key).length;
-
-  if (!existing && setNumber > loggedCount + 1) {
-    Haptic.error();
-    showToast('Log previous sets first');
-    return;
-  }
-
-  if (!existing) {
-    const planItem = buildPlannedSets().find(set => set.id === id);
-    if (!planItem) return;
-    state.currentSets.push({
-      id,
-      key: planItem.key,
-      ex: planItem.ex,
-      kg: planItem.plannedKg,
-      reps: ex.repsTarget,
-      targetReps: ex.repsTarget,
-      completed: true,
-      date: new Date().toISOString(),
-    });
-    Haptic.medium();
-  } else {
-    let nextReps = existing.reps - 1;
-    if (nextReps < 0) nextReps = ex.repsTarget;
-    existing.reps = nextReps;
-    existing.targetReps = ex.repsTarget;
-    existing.completed = nextReps >= ex.repsTarget;
-    Haptic.light();
-  }
-
-  renderPlannedSets();
-  renderSessionLog();
-  startRestTimer();
-
-  const updated = getLoggedSetById(id);
-  showToast(`${ex.name} set ${setNumber}: ${updated.reps} reps`);
-}
-
-function applyProgression(exKey, outcome) {
-  const prog = state.progress[exKey] || { ...defaultState.progress[exKey] };
-  const startKg = prog.currentKg;
-  const increment = getIncrementKg(exKey);
-  if (outcome.success) {
-    prog.currentKg = roundWorkoutKg(startKg + increment, exKey);
-    prog.failCount = 0;
-    prog.completedSessions += 1;
-    prog.lastOutcome = 'success';
-    state.progress[exKey] = prog;
-    return { outcome: 'success', workKg: startKg, nextKg: prog.currentKg, note: `Add ${formatWeight(increment)}` };
-  }
-  prog.failCount += 1;
-  if (state.settings.deload && prog.failCount >= 3) {
-    const baseFloor = state.weights[exKey];
-    prog.currentKg = Math.max(baseFloor, roundWorkoutKg(startKg * 0.9, exKey));
-    prog.failCount = 0;
-    prog.deloads += 1;
-    prog.lastOutcome = 'deload';
-    state.progress[exKey] = prog;
-    return { outcome: 'deload', workKg: startKg, nextKg: prog.currentKg, note: `Deload to ${formatWeight(prog.currentKg)}` };
-  }
-  prog.lastOutcome = 'repeat';
-  state.progress[exKey] = prog;
-  return { outcome: 'repeat', workKg: startKg, nextKg: prog.currentKg, note: `Repeat ${formatWeight(prog.currentKg)}` };
-}
-
-function completeWorkout() {
-  if (!state.currentSets.length) {
-    Haptic.error();
-    showToast('Log at least one set before completing');
-    return;
-  }
-  const plan = buildPlannedSets();
-  const doneCount = state.currentSets.length;
-  if (doneCount < plan.length) {
-    const proceed = confirm(`Only ${doneCount}/${plan.length} sets are logged. Complete workout anyway?`);
-    if (!proceed) return;
-  }
-  const type = currentWorkoutType();
-  const exerciseResults = getWorkoutPlan(type).map(ex => {
-    const outcome = getExerciseOutcome(ex.key);
-    const progression = applyProgression(ex.key, outcome);
-    return {
-      key: ex.key,
-      name: ex.name,
-      workKg: progression.workKg,
-      setsLogged: outcome.setsLogged,
-      setsTarget: outcome.setsTarget,
-      failedSets: outcome.failedSets,
-      outcome: progression.outcome,
-      nextKg: progression.nextKg,
-      note: progression.note,
+  if(data.calculator?.inventory?.lbs && data.calculator?.inventory?.kg){
+    state.inventory = {
+      lbs:[...data.calculator.inventory.lbs].slice(0,6),
+      kg:[...data.calculator.inventory.kg].slice(0,6),
     };
-  });
-  const successfulSets = state.currentSets.filter(s => s.completed).length;
-  state.workouts.push({
-    date: new Date().toISOString(),
-    type,
-    sets: [...state.currentSets],
-    successfulSets,
-    plannedSets: plan.length,
-    exerciseResults,
-    coachSummary: generateCoachMessage(),
-  });
-  state.currentSets = [];
-  stopRestTimer();
-  resetRestTimer();
-  Haptic.heavy();
-  saveToCloud();
-  renderToday();
-  renderProgress();
-  const deloaded = exerciseResults.filter(r => r.outcome === 'deload').map(r => r.name);
-  showToast(deloaded.length ? `Workout saved — deload triggered for ${deloaded.join(', ')}` : `Workout complete! ${successfulSets}/${plan.length} good sets logged`);
-}
-
-// ── REST TIMER ───────────────────────────────────────────────────────────────
-function updateRestTimerDisplay() {
-  const mins = String(Math.floor(restTimer.remaining / 60)).padStart(2, '0');
-  const secs = String(restTimer.remaining % 60).padStart(2, '0');
-  document.getElementById('rest-timer-display').textContent = `${mins}:${secs}`;
-  document.getElementById('rest-timer-btn').textContent = restTimer.running ? 'Pause' : 'Start';
-}
-function stopRestTimer() {
-  if (restTimer.interval) clearInterval(restTimer.interval);
-  restTimer.interval = null;
-  restTimer.running = false;
-  updateRestTimerDisplay();
-}
-function startRestTimer() {
-  stopRestTimer();
-  restTimer.running = true;
-  updateRestTimerDisplay();
-  restTimer.interval = setInterval(() => {
-    restTimer.remaining -= 1;
-    if (restTimer.remaining <= 0) {
-      stopRestTimer();
-      restTimer.remaining = 0;
-      updateRestTimerDisplay();
-      Haptic.heavy();
-      showToast('Rest complete — next set');
-      return;
-    }
-    updateRestTimerDisplay();
-  }, 1000);
-}
-function toggleRestTimer() {
-  if (restTimer.running) {
-    Haptic.light();
-    stopRestTimer();
   } else {
-    Haptic.medium();
-    if (restTimer.remaining <= 0) restTimer.remaining = restTimer.duration;
-    startRestTimer();
-  }
-}
-function resetRestTimer() {
-  stopRestTimer();
-  restTimer.remaining = restTimer.duration;
-  updateRestTimerDisplay();
-  if (_appReady) Haptic.light();
-}
-
-
-// ── PHASE 4 HELPERS ─────────────────────────────────────────────────────────
-function liftLabel(key) {
-  return ({ squat:'Squat', bench:'Bench press', dead:'Deadlift', ohp:'Overhead press', row:'Barbell row' })[key] || key;
-}
-function getLiftHistory(key) {
-  return state.workouts.map(w => {
-    const result = (w.exerciseResults || []).find(r => r.key === key);
-    if (!result) return null;
-    return {
-      date: w.date,
-      workKg: result.workKg,
-      outcome: result.outcome,
-      note: result.note,
-      successfulSets: w.successfulSets || 0,
-      plannedSets: w.plannedSets || 0,
-    };
-  }).filter(Boolean);
-}
-function computePRCount() {
-  let count = 0;
-  ['squat','bench','row','ohp','dead'].forEach(key => {
-    let best = 0;
-    getLiftHistory(key).forEach(item => {
-      if (item.workKg > best + 0.0001) {
-        best = item.workKg;
-        count += 1;
-      }
-    });
-  });
-  return count;
-}
-function currentWorkoutStreak() {
-  const dates = state.workouts.map(w => new Date(w.date)).sort((a,b) => b-a);
-  if (!dates.length) return 0;
-  let streak = 1;
-  for (let i = 0; i < dates.length - 1; i++) {
-    const diffDays = Math.round((dates[i] - dates[i+1]) / 86400000);
-    if (diffDays <= 4) streak += 1;
-    else break;
-  }
-  return streak;
-}
-function completedWeeksCount() {
-  return Math.floor(state.workouts.length / Math.max(1, state.profile.days || 3));
-}
-function renderMilestones() {
-  const el = document.getElementById('milestone-list');
-  if (!el) return;
-  if (!state.workouts.length) {
-    el.innerHTML = '<p style="color:var(--muted);font-size:13px;">Complete a few sessions to unlock milestones.</p>';
-    return;
-  }
-  const streak = currentWorkoutStreak();
-  const prs = computePRCount();
-  const weeks = completedWeeksCount();
-  const current = currentWeights();
-  const heaviest = Object.entries(current).sort((a,b)=>b[1]-a[1])[0];
-  el.innerHTML = `
-    <div class="milestone-grid">
-      <div class="milestone"><div class="milestone-k">Workout streak</div><div class="milestone-v">${streak}</div></div>
-      <div class="milestone"><div class="milestone-k">PRs logged</div><div class="milestone-v">${prs}</div></div>
-      <div class="milestone"><div class="milestone-k">Weeks built</div><div class="milestone-v">${weeks}</div></div>
-    </div>
-    <div class="milestone-note">Strongest current work set: ${liftLabel(heaviest[0])} at ${formatWeight(heaviest[1])}. ${prs >= 5 ? 'Momentum is visible now.' : 'Early momentum is building.'}</div>`;
-}
-function buildMiniChart(history) {
-  if (!history.length) return '<p style="color:var(--muted);font-size:13px;">Log workouts to see lift trends.</p>';
-  const values = history.map(h => kgToUnit(h.workKg));
-  const min = Math.min(...values);
-  const max = Math.max(...values);
-  const w = 280, h = 90, pad = 12;
-  const pts = values.map((v, i) => {
-    const x = pad + (i * ((w - pad * 2) / Math.max(1, values.length - 1)));
-    const y = h - pad - ((v - min) / Math.max(1, max - min || 1)) * (h - pad * 2);
-    return `${x},${y}`;
-  }).join(' ');
-  const last = history[history.length - 1];
-  const first = history[0];
-  const delta = kgToUnit(last.workKg - first.workKg);
-  return `
-    <div class="chart-box">
-      <svg viewBox="0 0 ${w} ${h}" width="100%" height="90" aria-label="Lift trend">
-        <polyline fill="none" stroke="#c62828" stroke-width="3" points="${pts}" />
-        ${values.map((v, i) => {
-          const x = pad + (i * ((w - pad * 2) / Math.max(1, values.length - 1)));
-          const y = h - pad - ((v - min) / Math.max(1, max - min || 1)) * (h - pad * 2);
-          return `<circle cx="${x}" cy="${y}" r="3.5" fill="#ffffff" />`;
-        }).join('')}
-      </svg>
-      <div class="chart-meta"><span>Start ${formatWeight(first.workKg)}</span><span>Now ${formatWeight(last.workKg)}</span><span>${delta >= 0 ? '+' : ''}${delta.toFixed(getUnit()==='lbs'?0:1)} ${getUnit()}</span></div>
-    </div>`;
-}
-function renderExerciseHistory() {
-  const tabs = document.getElementById('history-tabs');
-  const chart = document.getElementById('history-chart');
-  const list = document.getElementById('exercise-history-list');
-  if (!tabs || !chart || !list) return;
-  const keys = ['squat','bench','row','ohp','dead'];
-  tabs.innerHTML = keys.map(key => `<button class="chip-btn ${selectedHistoryLift===key?'active':''}" onclick="selectHistoryLift('${key}')">${liftLabel(key)}</button>`).join('');
-  const history = getLiftHistory(selectedHistoryLift);
-  chart.innerHTML = buildMiniChart(history);
-  if (!history.length) {
-    list.innerHTML = '';
-    return;
-  }
-  const prDates = new Set();
-  let runningBest = 0;
-  history.forEach(item => {
-    if (item.workKg > runningBest + 0.0001) {
-      runningBest = item.workKg;
-      prDates.add(item.date);
+    state.inventory = clone(DEFAULTS.inventory);
+    if(Array.isArray(data.plates)){
+      const legacyPairs = data.plates.slice(0,6).map(n=>Math.max(0,Math.floor((Number(n)||0)/2)));
+      while(legacyPairs.length<6) legacyPairs.push(0);
+      state.inventory[state.units] = legacyPairs;
     }
-  });
-  const recent = history.slice(-8).reverse();
-  list.innerHTML = recent.map(item => {
-    const isPR = prDates.has(item.date);
-    const ds = new Date(item.date).toLocaleDateString('en-US',{month:'short',day:'numeric'});
-    return `<div class="history-detail-row">
-      <div class="history-detail-main">${formatWeight(item.workKg)} ${isPR ? '<span class="pr-pill">PR</span>' : ''}<div class="history-detail-sub">${ds} · ${item.note || item.outcome}</div></div>
-      <div class="history-detail-sub">${item.outcome}</div>
-    </div>`;
-  }).join('');
-}
-function selectHistoryLift(key) {
-  selectedHistoryLift = key;
-  renderExerciseHistory();
-}
+  }
+  ['lbs','kg'].forEach(u=>{ while(state.inventory[u].length<6) state.inventory[u].push(0); state.inventory[u]=state.inventory[u].map(n=>Math.max(0,Math.floor(Number(n)||0))); });
 
-// ── PROGRESS ─────────────────────────────────────────────────────────────────
-function renderProgress() {
-  const count = state.workouts.length;
-  const current = currentWeights();
-  const bestByLift = { squat: 0, bench: 0, dead: 0, ohp: 0, row: 0 };
-  state.workouts.forEach(w => {
-    (w.exerciseResults || []).forEach(r => {
-      bestByLift[r.key] = Math.max(bestByLift[r.key] || 0, r.workKg || 0);
-    });
-  });
-  Object.keys(bestByLift).forEach(key => {
-    bestByLift[key] = Math.max(bestByLift[key], state.progress[key]?.currentKg || state.weights[key]);
-  });
-
-  document.getElementById('p-total').textContent = count;
-  document.getElementById('p-squat').textContent = formatWeightValue(bestByLift.squat);
-  document.getElementById('p-dead').textContent = formatWeightValue(bestByLift.dead);
-
-  const lifts = [
-    { key: 'squat', name: 'Squat', val: current.squat, best: bestByLift.squat, max: Math.max(state.weights.squat + (getUnit()==='lbs' ? 100 : 100), bestByLift.squat * 1.15), color: '#d93434' },
-    { key: 'dead', name: 'Deadlift', val: current.dead, best: bestByLift.dead, max: Math.max(state.weights.dead + (getUnit()==='lbs' ? 125 : 125), bestByLift.dead * 1.15), color: '#2f9e44' },
-    { key: 'bench', name: 'Bench press', val: current.bench, best: bestByLift.bench, max: Math.max(state.weights.bench + (getUnit()==='lbs' ? 75 : 75), bestByLift.bench * 1.15), color: '#d07a1f' },
-    { key: 'row', name: 'Barbell row', val: current.row, best: bestByLift.row, max: Math.max(state.weights.row + (getUnit()==='lbs' ? 60 : 60), bestByLift.row * 1.15), color: '#7e5bef' },
-    { key: 'ohp', name: 'Overhead press', val: current.ohp, best: bestByLift.ohp, max: Math.max(state.weights.ohp + (getUnit()==='lbs' ? 50 : 50), bestByLift.ohp * 1.15), color: '#9a3412' },
-  ];
-  document.getElementById('lift-bars').innerHTML = lifts.map(l => {
-    const pct = Math.min(100, Math.round((l.val / l.max) * 100));
-    const prog = state.progress[l.key] || defaultState.progress[l.key];
-    const status = prog.lastOutcome === 'deload' ? 'Recent deload' : prog.lastOutcome === 'repeat' ? `Repeat in play · misses ${prog.failCount}/3` : 'On track';
-    return `<div class="lift-card">
-      <div class="lift-card-head">
-        <div>
-          <div class="lift-card-title">${l.name}</div>
-          <div class="lift-card-sub">Best ${formatWeight(l.best)} · ${status}</div>
-        </div>
-        <div class="lift-card-value">${formatWeight(l.val)}</div>
-      </div>
-      <div class="lift-progress-track"><div class="lift-progress-fill" style="width:${pct}%;background:${l.color};"></div></div>
-      <div class="lift-card-meta"><span>Current work weight</span><span>${Math.max(0, Math.round((l.val / l.max) * 100))}% of runway</span></div>
-    </div>`;
-  }).join('');
-
-  const stats = weeklyStats();
-  document.getElementById('week-review').innerHTML = stats.workouts.length || stats.checkins.length ? `
-    <div class="review-hero">
-      <div class="review-hero-top">
-        <div>
-          <div class="review-hero-title">Weekly signal check</div>
-          <div class="review-hero-sub">Your training, recovery, and scale trend in one glance.</div>
-        </div>
-        <div class="review-badge">${stats.workouts.length}/${state.profile.days || 3} workouts</div>
-      </div>
-      <div class="review-grid">
-        <div class="review-cell"><div class="review-k">Workouts</div><div class="review-v">${stats.workouts.length}</div></div>
-        <div class="review-cell"><div class="review-k">Avg sleep</div><div class="review-v">${stats.avgSleep ? stats.avgSleep.toFixed(1) : '—'}</div></div>
-        <div class="review-cell"><div class="review-k">BW trend</div><div class="review-v" style="font-size:18px;">${bodyweightTrendText()}</div></div>
-      </div>
-      <div class="review-note">${weeklyReviewText(stats)}</div>
-    </div>
-  ` : '<p style="color:var(--muted);font-size:13px;">Log a few workouts and check-ins to unlock a weekly review.</p>';
-
-  renderMilestones();
-  renderExerciseHistory();
-
-  const hist = state.workouts.slice(-10).reverse();
-  document.getElementById('history-list').innerHTML = hist.length
-    ? hist.map(w => {
-        const d = new Date(w.date);
-        const ds = d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
-        const summary = (w.exerciseResults || []).map(r => `${r.name.split(' ')[0]}: ${r.outcome}`).join(' · ');
-        return `<div class="history-row">
-          <div>
-            <div style="font-weight:700;">Workout ${w.type}</div>
-            <div class="history-date">${ds} · ${summary || 'session logged'}</div>
-          </div>
-          <div style="text-align:right;font-size:13px;color:var(--muted);">${w.successfulSets || 0}/${w.plannedSets || w.sets.length} good sets</div>
-        </div>`;
-      }).join('')
-    : '<p style="color:var(--muted);font-size:13px;">No workouts logged yet.</p>';
-}
-
-// ── CHECK-IN ─────────────────────────────────────────────────────────────────
-function populateCheckin() {
-  const checkin = state.checkins.find(c => c.date === todayKey()) || latestCheckin();
-  document.getElementById('c-sleep').value = checkin?.sleep ?? '';
-  document.getElementById('c-bw').value = checkin?.bw ? formatWeightValue(checkin.bw) : '';
-  document.getElementById('c-stress').value = String(checkin?.stress ?? 3);
-  document.getElementById('c-soreness').value = String(checkin?.soreness ?? 3);
-}
-function saveCheckin() {
-  const unit = getUnit();
-  const bwInput = parseFloat(document.getElementById('c-bw').value);
-  const entry = {
-    date: todayKey(),
-    sleep: parseFloat(document.getElementById('c-sleep').value) || 0,
-    bw: Number.isFinite(bwInput) ? (unit === 'lbs' ? bwInput * LB_TO_KG : bwInput) : null,
-    stress: parseInt(document.getElementById('c-stress').value) || 3,
-    soreness: parseInt(document.getElementById('c-soreness').value) || 3,
+  state.barWeight = {
+    lbs: Number(data.calculator?.barWeight?.lbs ?? data.barWeight?.lbs ?? data.barWeightLbs) || 45,
+    kg: Number(data.calculator?.barWeight?.kg ?? data.barWeight?.kg) || 20,
   };
-  state.checkins = state.checkins.filter(c => c.date !== entry.date);
-  state.checkins.push(entry);
-  state.checkins.sort((a,b) => a.date.localeCompare(b.date));
-  if (entry.bw) state.profile.bw = entry.bw;
-  saveToCloud();
-  renderToday();
-  renderProgress();
-  populateSettings();
-  Haptic.medium();
-  showToast('Check-in saved');
+  state.target = {
+    lbs: Number(data.calculator?.target?.lbs) || 135,
+    kg: Number(data.calculator?.target?.kg) || 60,
+  };
 }
 
-// ── SETTINGS ──────────────────────────────────────────────────────────────────
-function populateSettings() {
-  document.getElementById('s-bw').value = formatWeightValue(state.profile.bw);
-  document.getElementById('s-days').value = String(state.profile.days);
-  document.getElementById('s-goal').value = state.profile.goal;
-  document.getElementById('s-age').value = state.profile.age;
-  document.getElementById('sw-squat').value = formatWeightValue(state.weights.squat);
-  document.getElementById('sw-bench').value = formatWeightValue(state.weights.bench);
-  document.getElementById('sw-dead').value = formatWeightValue(state.weights.dead);
-  document.getElementById('sw-ohp').value = formatWeightValue(state.weights.ohp);
-  document.getElementById('sw-row').value = formatWeightValue(state.weights.row);
-  document.getElementById('s-units').value = getUnit();
-  document.getElementById('t-adapt').checked = state.settings.adapt;
-  document.getElementById('t-deload').checked = state.settings.deload;
-  document.getElementById('t-cycling').checked = state.settings.cycling;
-  document.getElementById('t-mealplan').checked = state.settings.mealplan;
+function syncState(mode){
+  const dot=document.getElementById('sync-dot');
+  const label=document.getElementById('sync-label');
+  dot.className='sync-dot'+(mode==='syncing'?' syncing':mode==='err'?' err':'');
+  label.textContent=mode==='syncing'?'saving...':mode==='err'?'offline':'saved';
 }
 
-function captureProfileFromForm() {
-  const unit = document.getElementById('s-units').value;
-  state.settings.units = unit;
-  const bwInput = parseFloat(document.getElementById('s-bw').value);
-  state.profile.bw = Number.isFinite(bwInput) ? (unit === 'lbs' ? bwInput * LB_TO_KG : bwInput) : defaultState.profile.bw;
-  state.profile.days = parseInt(document.getElementById('s-days').value, 10) || defaultState.profile.days;
-  state.profile.goal = document.getElementById('s-goal').value;
-  state.profile.age = document.getElementById('s-age').value;
-  state.settings.adapt = document.getElementById('t-adapt').checked;
-  state.settings.deload = document.getElementById('t-deload').checked;
-  state.settings.cycling = document.getElementById('t-cycling').checked;
-  state.settings.mealplan = document.getElementById('t-mealplan').checked;
-}
-function captureWeightsFromForm() {
-  const unit = document.getElementById('s-units').value;
-  state.settings.units = unit;
-  state.weights.squat = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-squat').value), 'squat', defaultState.weights.squat);
-  state.weights.bench = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-bench').value), 'bench', defaultState.weights.bench);
-  state.weights.dead = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-dead').value), 'dead', defaultState.weights.dead);
-  state.weights.ohp = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-ohp').value), 'ohp', defaultState.weights.ohp);
-  state.weights.row = sanitizeEnteredWeightKg(parseFloat(document.getElementById('sw-row').value), 'row', defaultState.weights.row);
-  Object.keys(state.weights).forEach(key => {
-    state.progress[key].currentKg = state.weights[key];
-    state.progress[key].failCount = 0;
-    state.progress[key].completedSessions = 0;
-    state.progress[key].deloads = 0;
-    state.progress[key].lastOutcome = 'new';
-  });
-}
-function saveSettings() {
-  captureProfileFromForm();
-  updateUnitLabels();
-  populateSettings();
-  renderToday();
-  renderProgress();
-  saveToCloud();
-  Haptic.medium();
-  showToast('Profile saved');
-}
-function saveWeights() {
-  captureWeightsFromForm();
-  updateUnitLabels();
-  populateSettings();
-  renderToday();
-  renderProgress();
-  saveToCloud();
-  Haptic.medium();
-  showToast('Starting weights saved');
-}
-function autosaveProfile() {
-  captureProfileFromForm();
-  updateUnitLabels();    // rebuilds drums + plate inputs for new unit
-  populateSettings();    // syncs form fields
-  rebuildDrumsForUnit(); // ensure drums show converted values
-  renderToday();
-  renderProgress();
-  saveToCloud();
-}
-function autosaveWeights() {
-  captureWeightsFromForm();
-  updateUnitLabels();
-  populateSettings();
-  renderToday();
-  renderProgress();
-  saveToCloud();
+function buildPayload(){
+  const activeInventory = state.inventory[unit()].map(n=>n*2);
+  return {
+    ...rawState,
+    settings:{...(rawState.settings||{}),units:unit()},
+    plates:activeInventory,
+    barWeight:{...(rawState.barWeight||{}),...state.barWeight},
+    barWeightLbs:state.barWeight.lbs,
+    calculator:{
+      units:unit(),
+      inventory:clone(state.inventory),
+      barWeight:{...state.barWeight},
+      target:{...state.target},
+    },
+    updatedAt:Date.now(),
+  };
 }
 
-// ── DATA ─────────────────────────────────────────────────────────────────────
-function exportData() {
-  const blob = new Blob([JSON.stringify(state, null, 2)], { type: 'application/json' });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'stronglifts-data.json';
-  a.click();
+async function saveNow(){
+  clearTimeout(saveTimer);
+  const payload=buildPayload();
+  rawState=payload;
+  localStorage.setItem('sl_calc_cache',JSON.stringify(payload));
+  syncState('syncing');
+  try{
+    const r=await fetch(`${API}/data/${USER_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    if(!r.ok) throw new Error(String(r.status));
+    syncState('ok');
+  }catch(e){ syncState('err'); }
 }
-function confirmReset() {
-  if (confirm('Reset ALL data? This cannot be undone.')) {
-    Haptic.heavy();
-    state = JSON.parse(JSON.stringify(defaultState));
-    stopRestTimer();
-    resetRestTimer();
-    saveToCloud();
-    updateUnitLabels();
-    populateSettings();
-    renderToday();
-    renderProgress();
-    populateCheckin();
-    showToast('Data reset');
+function queueSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,250); }
+
+async function load(){
+  syncState('syncing');
+  try{
+    const r=await fetch(`${API}/data/${USER_KEY}`);
+    if(r.ok){ const body=await r.json(); normalizeLoaded(body.data||{}); localStorage.setItem('sl_calc_cache',JSON.stringify(body.data||{})); syncState('ok'); return; }
+    if(r.status===404){ normalizeLoaded({}); syncState('ok'); return; }
+    throw new Error(String(r.status));
+  }catch(e){
+    const cached=localStorage.getItem('sl_calc_cache');
+    normalizeLoaded(cached?JSON.parse(cached):{});
+    syncState(cached?'err':'err');
   }
 }
 
-
-// ── PLATE CALCULATOR ─────────────────────────────────────────────────────────
-//
-// DESIGN: All plate sizes have two canonical sets — lbs and kg.
-// We never convert between them mid-calc. The unit setting picks
-// which set to use. Bar weight is stored separately in lbs AND kg
-// so switching units never causes rounding drift.
-//
-// Standard kg plates: 20, 15, 10, 5, 2.5, 1.25
-// Standard lb plates: 45, 35, 25, 10, 5, 2.5
-
-const PLATES = {
-  lbs: [45, 35, 25, 10, 5, 2.5],
-  kg:  [20, 15, 10,  5, 2.5, 1.25],
-};
-const PLATE_COLORS = {
-  // lbs keys
-  45: '#1a6cdb', 35: '#b8a000', 25: '#27a04a',
-  // kg keys (same index, different size)
-  20: '#1a6cdb', 15: '#b8a000',
-  // shared
-  10: '#999', 5: '#c23030', 2.5: '#555', 1.25: '#333',
-};
-const PLATE_HEIGHTS = {
-  45: 52, 35: 46, 25: 40, 20: 52, 15: 46,
-  10: 28, 5: 22, 2.5: 18, 1.25: 14,
-};
-
-// Bar canonical values — never derived from each other
-const BAR_DEFAULTS = { lbs: 45, kg: 20 };
-
-function getPlateUnit() { return getUnit(); }
-function plateSizes() { return PLATES[getPlateUnit()]; }
-
-function getPlateInventory() {
-  if (!state.plates) state.plates = [0, 0, 4, 4, 4, 4];
-  while (state.plates.length < 6) state.plates.push(0);
-  return state.plates;
+function setUnit(next){
+  if(next!=='lbs' && next!=='kg') return;
+  state.units=next;
+  vibrate();
+  renderAll();
+  queueSave();
 }
 
-// Bar weight stored as { lbs, kg } object — never cross-converted
-function getBarWeight() {
-  const u = getPlateUnit();
-  if (state.barWeight && Number.isFinite(state.barWeight[u])) return state.barWeight[u];
-  // legacy: migrate old barWeightLbs field
-  if (u === 'lbs' && Number.isFinite(state.barWeightLbs)) return state.barWeightLbs;
-  return BAR_DEFAULTS[u];
+function buildInventory(){
+  const el=document.getElementById('plate-inputs');
+  const u=unit();
+  el.innerHTML=sizes().map((weight,i)=>`<div class="plate-row">
+    <div class="plate-name">
+      <span class="plate-swatch" style="background:${PLATE_COLORS[weight]}"></span>
+      <div><div class="plate-weight">${weight} ${u}</div><div class="plate-meta">pair${pairs()[i]===1?'':'s'} available</div></div>
+    </div>
+    <div class="pair-counter">
+      <button type="button" aria-label="Remove one pair of ${weight} ${u}" onclick="changePair(${i},-1)">−</button>
+      <div class="pair-count">${pairs()[i]}</div>
+      <button type="button" aria-label="Add one pair of ${weight} ${u}" onclick="changePair(${i},1)">+</button>
+    </div>
+  </div>`).join('');
 }
 
-function setBarWeight(val) {
-  const u = getPlateUnit();
-  if (!state.barWeight) state.barWeight = { ...BAR_DEFAULTS };
-  state.barWeight[u] = val;
-  // keep legacy field in sync for lbs
-  if (u === 'lbs') state.barWeightLbs = val;
+function changePair(index,delta){
+  const inv=pairs();
+  inv[index]=Math.max(0,(inv[index]||0)+delta);
+  vibrate();
+  buildInventory();
+  renderResult();
+  queueSave();
+}
+function resetInventory(){
+  if(!confirm(`Clear all ${unit().toUpperCase()} plate pairs?`)) return;
+  state.inventory[unit()]=[0,0,0,0,0,0];
+  buildInventory();renderResult();queueSave();
 }
 
-function buildPlateInputs() {
-  const inv = getPlateInventory();
-  const unit = getPlateUnit();
-  const sizes = plateSizes();
-  const container = document.getElementById('plate-inputs');
-  if (!container) return;
-
-  container.innerHTML = sizes.map((size, i) => {
-    const count = inv[i] || 0;
-    return `<div class="plate-input-row">
-      <div>
-        <div class="plate-label" style="color:${PLATE_COLORS[size]};">${size} ${unit}</div>
-        <div class="plate-sub">total plates owned</div>
-      </div>
-      <div class="plate-counter">
-        <button class="plate-btn" onclick="changePlate(${i},-2)">−</button>
-        <div class="plate-count" id="pc-${i}">${count}</div>
-        <button class="plate-btn" onclick="changePlate(${i},2)">+</button>
-      </div>
-    </div>`;
-  }).join('');
-
-  const barLbl = document.getElementById('bar-unit-label');
-  const customLbl = document.getElementById('custom-unit-label');
-  if (barLbl) barLbl.textContent = unit;
-  if (customLbl) customLbl.textContent = unit;
-
-  // Set bar input to the canonical value for this unit — no conversion
-  const barInput = document.getElementById('bar-weight');
-  if (barInput) barInput.value = getBarWeight();
+function changeBar(dir){
+  const u=unit();
+  state.barWeight[u]=Math.max(barStep(),Math.round((state.barWeight[u]+dir*barStep())*100)/100);
+  renderBar();renderResult();queueSave();
+}
+function commitBar(){
+  const el=document.getElementById('bar-weight');
+  const v=Number(el.value);
+  if(Number.isFinite(v)&&v>0) state.barWeight[unit()]=v;
+  renderBar();renderResult();queueSave();
+}
+function renderBar(){
+  const el=document.getElementById('bar-weight');
+  el.value=formatNumber(state.barWeight[unit()]);
+  el.step=String(barStep());
 }
 
-function changePlate(index, delta) {
-  Haptic.light();
-  const inv = getPlateInventory();
-  inv[index] = Math.max(0, (inv[index] || 0) + delta);
-  state.plates = inv;
-  const el = document.getElementById('pc-' + index);
-  if (el) el.textContent = inv[index];
-  savePlates();
-  calcAllPlates();
-  calcCustomPlates();
+function changeTarget(dir){
+  const u=unit();
+  const min=state.barWeight[u];
+  state.target[u]=Math.max(min,Math.round((state.target[u]+dir*step())*100)/100);
+  vibrate();renderTarget();renderResult();queueSave();
+}
+function setTarget(v){
+  const u=unit();
+  state.target[u]=Math.max(state.barWeight[u],Number(v)||state.target[u]);
+  renderTarget();renderResult();queueSave();
+}
+function commitTarget(){
+  const el=document.getElementById('target-weight');
+  setTarget(el.value);
+}
+function renderTarget(){
+  const u=unit();
+  const el=document.getElementById('target-weight');
+  el.value=formatNumber(state.target[u]);
+  el.step=String(step());
+  el.min=String(state.barWeight[u]);
+  document.getElementById('target-unit').textContent=u;
+  const presets=u==='lbs'?[95,135,185,225,315,405]:[40,60,80,100,140,180];
+  document.getElementById('quick-targets').innerHTML=presets.map(v=>`<button type="button" onclick="setTarget(${v})">${v}${u}</button>`).join('');
 }
 
-function savePlates() {
-  const barInput = document.getElementById('bar-weight');
-  if (barInput) {
-    const val = parseFloat(barInput.value);
-    if (Number.isFinite(val) && val > 0) setBarWeight(val);
-  }
-  saveToCloud();
-}
+function scaled(v){ return Math.round(v*100); }
+function unscaled(v){ return v/100; }
 
-// ── Core greedy plate solver ─────────────────────────────────────────────────
-// Works entirely in the current unit. No lbs↔kg conversion inside.
-// inventoryTotal[i] = total plates of size i owned (both sides combined).
-// Returns: { exact: bool, plates: [{size, count}], total, rounded }
-function solvePlates(targetWeight, barWeight, inventoryTotal) {
-  const sizes = plateSizes();
-  const sideNeeded = (targetWeight - barWeight) / 2;
-
-  if (sideNeeded < -0.001) {
-    return { error: `Target ${targetWeight} is lighter than the bar (${barWeight})` };
-  }
-
-  // Try exact match first, then round up by smallest plate increments
-  const smallestPlate = sizes[sizes.length - 1];
-
-  function tryTarget(side) {
-    const result = [];
-    let rem = Math.round(side * 1000) / 1000;
-    for (let i = 0; i < sizes.length; i++) {
-      const size = sizes[i];
-      // max pairs we can put on one side = floor(totalOwned / 2)
-      const maxOnSide = Math.floor((inventoryTotal[i] || 0) / 2);
-      if (size <= rem + 0.001 && maxOnSide > 0) {
-        const needed = Math.floor((rem + 0.001) / size);
-        const used = Math.min(needed, maxOnSide);
-        if (used > 0) {
-          result.push({ size, count: used });
-          rem = Math.round((rem - used * size) * 1000) / 1000;
-        }
+function exactCombo(sideWeight){
+  const plateInts=sizes().map(scaled);
+  const target=scaled(sideWeight);
+  const inv=pairs();
+  const memo=new Map();
+  function dfs(i,remaining){
+    if(remaining===0) return [];
+    if(i>=plateInts.length || remaining<0) return null;
+    const key=`${i}:${remaining}`;
+    if(memo.has(key)) return memo.get(key);
+    const size=plateInts[i];
+    const max=Math.min(inv[i]||0,Math.floor(remaining/size));
+    for(let count=max;count>=0;count--){
+      const rest=dfs(i+1,remaining-count*size);
+      if(rest!==null){
+        const answer=count>0?[{size:sizes()[i],count},...rest]:rest;
+        memo.set(key,answer);return answer;
       }
     }
-    return { plates: result, remaining: rem };
+    memo.set(key,null);return null;
   }
-
-  // Attempt exact
-  const exact = tryTarget(sideNeeded);
-  if (exact.remaining < 0.001) {
-    const total = Math.round((barWeight + exact.plates.reduce((s, p) => s + p.size * p.count * 2, 0)) * 1000) / 1000;
-    return { exact: true, plates: exact.plates, total };
-  }
-
-  // Round UP: find next achievable weight above target
-  // Increment by smallest plate size on each side until we find a combo
-  let bump = smallestPlate;
-  for (let attempt = 0; attempt < 40; attempt++) {
-    const higherSide = sideNeeded + bump;
-    const trial = tryTarget(higherSide);
-    if (trial.remaining < 0.001) {
-      const total = Math.round((barWeight + trial.plates.reduce((s, p) => s + p.size * p.count * 2, 0)) * 1000) / 1000;
-      return { exact: false, rounded: true, plates: trial.plates, total, requested: targetWeight };
-    }
-    bump += smallestPlate;
-  }
-
-  return { error: `Not enough plates to load anywhere near ${targetWeight} ${getPlateUnit()}` };
+  return dfs(0,target);
 }
 
-function buildPlateVisual(platesPerSide) {
-  const unit = getPlateUnit();
-  if (!platesPerSide.length) {
-    return '<div style="text-align:center;color:var(--muted);font-size:13px;padding:8px 0;">Just the bar</div>';
+function solve(target){
+  const u=unit();
+  const bar=state.barWeight[u];
+  if(target<bar-0.0001) return {error:`Target is lighter than your ${formatNumber(bar)} ${u} bar.`};
+  const side=(target-bar)/2;
+  let combo=exactCombo(side);
+  if(combo) return {exact:true,total:target,plates:combo,requested:target};
+
+  const maxSide=sizes().reduce((sum,s,i)=>sum+s*(pairs()[i]||0),0);
+  const maxTotal=bar+maxSide*2;
+  if(target>maxTotal+0.0001) return {error:`You only have enough plates to reach ${formatNumber(maxTotal)} ${u}.`};
+
+  const inc=sizes()[sizes().length-1];
+  for(let candidateSide=side+inc;candidateSide<=maxSide+0.0001;candidateSide+=inc){
+    candidateSide=Math.round(candidateSide*100)/100;
+    combo=exactCombo(candidateSide);
+    if(combo){
+      const total=Math.round((bar+candidateSide*2)*100)/100;
+      return {exact:false,total,plates:combo,requested:target};
+    }
   }
-  function makeStack(plates, reverse) {
-    const ordered = reverse ? [...plates].reverse() : plates;
-    return ordered.map(p => {
-      const h = PLATE_HEIGHTS[p.size] || 28;
-      const w = Math.max(12, Math.round(h * 0.38));
-      return Array(p.count).fill(0).map(() =>
-        `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[p.size]};writing-mode:vertical-rl;text-orientation:mixed;">${p.size}</div>`
-      ).join('');
+  return {error:'No valid symmetric load can be made from the plate pairs selected.'};
+}
+
+function plateVisual(combo){
+  if(!combo.length) return '<div class="result-empty" style="padding:14px 0">Bar only</div>';
+  function stack(reverse){
+    const expanded=[];
+    combo.forEach(p=>{ for(let i=0;i<p.count;i++) expanded.push(p.size); });
+    if(reverse) expanded.reverse();
+    return expanded.map(size=>{
+      const h=PLATE_HEIGHTS[size]||28;
+      const w=Math.max(10,Math.round(h*.34));
+      return `<div class="plate-block" style="width:${w}px;height:${h}px;background:${PLATE_COLORS[size]}">${size}</div>`;
     }).join('');
   }
-  return `<div class="plate-diagram">
-    <div class="bar-visual">
-      <div class="bar-sleeve"></div>
-      <div class="plate-stack">${makeStack(platesPerSide, true)}</div>
-      <div class="bar-center"></div>
-      <div class="plate-stack">${makeStack(platesPerSide, false)}</div>
-      <div class="bar-sleeve"></div>
-    </div>
-  </div>`;
+  return `<div class="bar-diagram"><div class="bar-visual"><div class="sleeve"></div><div class="plate-stack">${stack(true)}</div><div class="bar-center"></div><div class="plate-stack">${stack(false)}</div><div class="sleeve"></div></div></div>`;
 }
 
-function renderPlateCard(title, calc, unit) {
-  if (calc.error) {
-    return `<div class="plate-result" style="margin-bottom:10px;">
-      <div class="plate-result-title">${title}</div>
-      <div class="plate-impossible">${calc.error}. Add more plates in your inventory above.</div>
+function renderResult(){
+  const el=document.getElementById('result');
+  const u=unit();
+  const inv=pairs();
+  if(inv.every(n=>n===0)){
+    el.innerHTML='<div class="result-empty">Add your plate pairs above to calculate the load.</div>';
+    return;
+  }
+  const target=state.target[u];
+  const calc=solve(target);
+  if(calc.error){ el.innerHTML=`<div class="error-box">${calc.error}</div>`; return; }
+  const perSide=calc.plates.length?calc.plates.map(p=>`${p.count}× ${formatNumber(p.size)} ${u}`).join(' + '):'Bar only';
+  const badge=calc.exact?'<span class="exact-badge">✓ Exact load</span>':'<span class="near-badge">Closest load above</span>';
+  const delta=calc.exact?'':`<div class="result-delta">Requested ${formatNumber(calc.requested)} ${u} · +${formatNumber(calc.total-calc.requested)} ${u}</div>`;
+  el.innerHTML=`
+    <div class="result-summary">
+      <div><div class="result-kicker">Total on bar</div><div class="result-big">${formatNumber(calc.total)} <span style="font-size:.46em">${u}</span></div>${delta}</div>
+      ${badge}
+    </div>
+    ${plateVisual(calc.plates)}
+    <div class="load-list">
+      <div class="load-cell full"><div class="load-label">Put on each side</div><div class="load-value">${perSide}</div></div>
+      <div class="load-cell"><div class="load-label">Bar</div><div class="load-value">${formatNumber(state.barWeight[u])} ${u}</div></div>
+      <div class="load-cell"><div class="load-label">Plate weight added</div><div class="load-value">${formatNumber(calc.total-state.barWeight[u])} ${u}</div></div>
     </div>`;
-  }
-  const perSideList = calc.plates.map(p => `${p.count}× ${p.size}${unit}`).join(', ') || 'bar only';
-  const roundedBanner = !calc.exact ? `
-    <div style="background:var(--amber-dim);border:1px solid rgba(183,121,31,.2);border-radius:10px;padding:9px 12px;margin-bottom:10px;font-size:13px;color:var(--amber);">
-      You don't have the exact combination for ${calc.requested}${unit} — loaded up to <strong>${calc.total}${unit}</strong> instead (nearest achievable weight).
-    </div>` : '';
-
-  return `<div class="plate-result" style="margin-bottom:10px;">
-    <div class="plate-result-title">${title}</div>
-    ${roundedBanner}
-    ${buildPlateVisual(calc.plates)}
-    <div class="plate-result-row">
-      <div><div class="plate-result-ex">Per side</div><div class="plate-result-detail">${perSideList}</div></div>
-      <div class="plate-result-badge">${perSideList}</div>
-    </div>
-    <div class="plate-result-row">
-      <div><div class="plate-result-ex">Total on bar</div></div>
-      <div class="plate-result-badge">${calc.total}${unit}</div>
-    </div>
-    <div class="plate-result-row">
-      <div><div class="plate-result-ex">Bar</div></div>
-      <div class="plate-result-badge">${getBarWeight()}${unit}</div>
-    </div>
-  </div>`;
 }
 
-function calcAllPlates() {
-  const inv = getPlateInventory();
-  const bar = getBarWeight();
-  const wts = currentWeights();
-  const exercises = getWorkoutPlan();
-  const unit = getPlateUnit();
-  const container = document.getElementById('plate-results');
-  if (!container) return;
+function renderUnits(){
+  document.getElementById('unit-lbs').classList.toggle('active',unit()==='lbs');
+  document.getElementById('unit-kg').classList.toggle('active',unit()==='kg');
+}
+function renderAll(){ renderUnits();renderBar();buildInventory();renderTarget();renderResult(); }
 
-  container.innerHTML = exercises.map(ex => {
-    // Convert work weight to display unit
-    const workInUnit = unit === 'kg' ? wts[ex.key] : wts[ex.key] * KG_TO_LB;
-    // Round to nearest achievable increment (2× smallest plate) for clean targets
-    const sizes = plateSizes();
-    const step = sizes[sizes.length - 1] * 2;
-    const target = Math.round(workInUnit / step) * step;
-    const calc = solvePlates(target, bar, inv);
-    return renderPlateCard(`${ex.name} — ${formatWeight(wts[ex.key])}`, calc, unit);
-  }).join('');
+function toast(msg){
+  const t=document.getElementById('toast');t.textContent=msg;t.classList.add('show');clearTimeout(t._timer);t._timer=setTimeout(()=>t.classList.remove('show'),1800);
 }
 
-function calcCustomPlates() {
-  const input = document.getElementById('custom-weight');
-  const container = document.getElementById('custom-result');
-  if (!input || !container) return;
-  const val = parseFloat(input.value);
-  if (!Number.isFinite(val) || val <= 0) { container.innerHTML = ''; return; }
-  const unit = getPlateUnit();
-  const bar = getBarWeight();
-  const inv = getPlateInventory();
-  const calc = solvePlates(val, bar, inv);
-  container.innerHTML = renderPlateCard(`${val} ${unit} load`, calc, unit);
-}
+document.getElementById('bar-weight').addEventListener('change',commitBar);
+document.getElementById('bar-weight').addEventListener('blur',commitBar);
+document.getElementById('target-weight').addEventListener('change',commitTarget);
+document.getElementById('target-weight').addEventListener('blur',commitTarget);
+document.getElementById('target-weight').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.currentTarget.blur(); } });
 
-
-// ── DRUM ROLLER PICKER ────────────────────────────────────────────────────────
-//
-// VIRTUAL SCROLLING — only 11 DOM nodes per drum regardless of range size.
-// The track holds POOL_SIZE tile divs. As the user scrolls, we recycle them:
-// each tile's textContent and position is updated to show the correct value.
-// This means a 0.5-step body-weight drum (352 values) costs the same as a
-// 5-step bar-weight drum (10 values) — no crash, no lag.
-//
-// Coordinate system:
-//   "logical" offset = selectedIndex * ITEM_H  (how far we've scrolled in value-space)
-//   Each tile i covers logical range [i*ITEM_H .. (i+1)*ITEM_H)
-//   Tile absolute top  = tileRow * ITEM_H  where tileRow wraps via modulo
-//   CSS: position:absolute; top = tileRow * ITEM_H; transform = translateY(-offset)
-//   Center of viewport = ITEM_H * CENTER  pixels from top of roller
-
-const DRUM_FIELDS = [
-  ['drum-s-bw',          's-bw'],
-  ['drum-sw-squat',      'sw-squat'],
-  ['drum-sw-bench',      'sw-bench'],
-  ['drum-sw-dead',       'sw-dead'],
-  ['drum-sw-ohp',        'sw-ohp'],
-  ['drum-sw-row',        'sw-row'],
-  ['drum-c-bw',          'c-bw'],
-  ['drum-bar-weight',    'bar-weight'],
-  ['drum-custom-weight', 'custom-weight'],
-];
-
-const WEIGHT_FIELDS_KG = new Set(['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row','s-bw','c-bw']);
-const ITEM_H   = 44;   // px per item — matches --drum-item-h
-const VISIBLE  = 5;    // items visible in viewport
-const CENTER   = 2;    // center slot index (0-based)
-const POOL_SIZE = 11;  // tile pool — enough to fill viewport + buffer each side
-
-function drumConfig(inputId) {
-  const isLbs = getUnit() === 'lbs';
-  const C = {
-    'sw-squat':      { min: isLbs?45:20,  max: isLbs?500:225, step: isLbs?5:2.5,  def: isLbs?135:60  },
-    'sw-bench':      { min: isLbs?45:20,  max: isLbs?400:180, step: isLbs?5:2.5,  def: isLbs?95:40   },
-    'sw-dead':       { min: isLbs?45:20,  max: isLbs?600:270, step: isLbs?5:2.5,  def: isLbs?175:80  },
-    'sw-ohp':        { min: isLbs?45:20,  max: isLbs?300:135, step: isLbs?5:2.5,  def: isLbs?65:30   },
-    'sw-row':        { min: isLbs?45:20,  max: isLbs?400:180, step: isLbs?5:2.5,  def: isLbs?95:40   },
-    's-bw':          { min: isLbs?88:40,  max: isLbs?440:200, step: isLbs?2:0.5,  def: isLbs?185:85  },
-    'c-bw':          { min: isLbs?88:40,  max: isLbs?440:200, step: isLbs?2:0.5,  def: isLbs?185:85  },
-    'bar-weight':    { min: isLbs?15:5,   max: isLbs?65:30,   step: isLbs?5:2.5,  def: isLbs?45:20   },
-    'custom-weight': { min: isLbs?45:20,  max: isLbs?800:360, step: isLbs?5:2.5,  def: isLbs?135:60  },
-  };
-  return C[inputId] || { min:0, max:500, step:5, def:100 };
-}
-
-// Total number of steps for this field
-function drumCount(inputId) {
-  const { min, max, step } = drumConfig(inputId);
-  return Math.round((max - min) / step) + 1;
-}
-
-// Value at index i (clamped)
-function drumValAt(inputId, i) {
-  const { min, max, step } = drumConfig(inputId);
-  const count = Math.round((max - min) / step) + 1;
-  const clamped = Math.max(0, Math.min(count - 1, i));
-  const v = min + clamped * step;
-  return Math.round(v * 1e6) / 1e6;
-}
-
-function drumFormat(v) {
-  if (v % 1 === 0) return String(v);
-  if (Math.abs(v * 10 % 1) < 0.001) return v.toFixed(1);
-  return v.toFixed(2);
-}
-
-function drumGetValue(inputId) {
-  const hidden = document.getElementById(inputId);
-  const raw = parseFloat(hidden?.value);
-  const { def, step } = drumConfig(inputId);
-  if (!Number.isFinite(raw) || raw <= 0) return def;
-  const displayVal = (WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs') ? raw * KG_TO_LB : raw;
-  return Math.round(displayVal / step) * step;
-}
-
-function drumSetValue(inputId, val, fire) {
-  const hidden = document.getElementById(inputId);
-  if (hidden) {
-    const store = (WEIGHT_FIELDS_KG.has(inputId) && getUnit() === 'lbs')
-      ? Math.round(val * LB_TO_KG * 1e4) / 1e4 : val;
-    hidden.value = store;
-  }
-  if (!fire) return;
-  if (WEIGHT_FIELDS_KG.has(inputId) && inputId.startsWith('sw-')) autosaveWeights();
-  else if (inputId === 's-bw') autosaveProfile();
-  else if (inputId === 'c-bw') {}
-  else if (inputId === 'bar-weight') { savePlates(); calcAllPlates(); }
-  else if (inputId === 'custom-weight') calcCustomPlates();
-}
-
-function buildDrum(rollerId, inputId) {
-  const roller = document.getElementById(rollerId);
-  if (!roller) return;
-
-  // Destroy any previous instance cleanly
-  roller._drumDestroy?.();
-
-  const count = drumCount(inputId);
-  const currentDisplay = drumGetValue(inputId);
-  const { min, step } = drumConfig(inputId);
-
-  // Find initial index
-  let initIdx = Math.round((currentDisplay - min) / step);
-  initIdx = Math.max(0, Math.min(count - 1, initIdx));
-
-  // ── Build minimal DOM ─────────────────────────────────────────────────────
-  roller.innerHTML = '';
-  roller.style.position = 'relative';
-
-  // Selection band (purely decorative, pointer-events:none)
-  const sel = document.createElement('div');
-  sel.className = 'drum-selector';
-  roller.appendChild(sel);
-
-  // Top + bottom fades (::before/::after handled in CSS, but we need overflow:hidden)
-  // Create the pool of recycled tile divs
-  const tiles = [];
-  for (let t = 0; t < POOL_SIZE; t++) {
-    const el = document.createElement('div');
-    el.className = 'drum-item';
-    el.style.position = 'absolute';
-    el.style.left = '0'; el.style.right = '0';
-    el.style.height = ITEM_H + 'px';
-    el.style.display = 'flex';
-    el.style.alignItems = 'center';
-    el.style.justifyContent = 'center';
-    roller.appendChild(el);
-    tiles.push(el);
-  }
-
-  // Fades rendered via pseudo-elements — add real divs on top for z-index safety
-  const fadeTop = document.createElement('div');
-  fadeTop.style.cssText = `position:absolute;top:0;left:0;right:0;height:${ITEM_H*2}px;background:linear-gradient(to bottom,var(--bg3) 10%,transparent);pointer-events:none;z-index:3;`;
-  const fadeBot = document.createElement('div');
-  fadeBot.style.cssText = `position:absolute;bottom:0;left:0;right:0;height:${ITEM_H*2}px;background:linear-gradient(to top,var(--bg3) 10%,transparent);pointer-events:none;z-index:3;`;
-  roller.appendChild(fadeTop);
-  roller.appendChild(fadeBot);
-
-  // ── Virtual rendering ──────────────────────────────────────────────────────
-  // "scrollTop" in pixel terms = selectedIdx * ITEM_H
-  // Viewport center at CENTER * ITEM_H from top of roller.
-  // Tile t shows value at index: firstVisibleIdx + t
-  // where firstVisibleIdx = selectedIdx - CENTER  (so selected lands at center)
-
-  let currentIdx = initIdx;
-  let lastRenderedFirst = null;
-
-  function renderTiles(idx) {
-    // The first value-index we need to show
-    const firstIdx = idx - CENTER - Math.floor((POOL_SIZE - VISIBLE) / 2);
-
-    if (firstIdx === lastRenderedFirst) return; // nothing changed
-    lastRenderedFirst = firstIdx;
-
-    tiles.forEach((tile, t) => {
-      const valueIdx = firstIdx + t;
-      const clamped = Math.max(0, Math.min(count - 1, valueIdx));
-      const v = drumValAt(inputId, clamped);
-      const isEmpty = valueIdx < 0 || valueIdx >= count;
-
-      tile.textContent = isEmpty ? '' : drumFormat(v);
-
-      // Position: tile t sits at (firstIdx + t) * ITEM_H relative to scroll origin
-      // But we translate the whole roller by -idx*ITEM_H + CENTER*ITEM_H
-      // so tile absolute top = (firstIdx + t) * ITEM_H
-      tile.style.top = ((firstIdx + t) * ITEM_H) + 'px';
-
-      const dist = Math.abs(valueIdx - idx);
-      tile.className = 'drum-item' +
-        (isEmpty ? ' ghost' : dist === 0 ? ' selected' : dist === 1 ? ' near' : '');
-    });
-  }
-
-  // Translate roller content so that idx lands in center slot
-  // Center slot top = CENTER * ITEM_H from roller top
-  // Item at idx has top = idx * ITEM_H (in tile coordinate space)
-  // To bring it to center: translateY = CENTER*ITEM_H - idx*ITEM_H = (CENTER-idx)*ITEM_H
-  // But tiles are position:absolute inside roller (no track wrapper needed)
-  // We translate the roller's inner content by applying transform to a single wrapper
-  const inner = document.createElement('div');
-  inner.style.cssText = 'position:absolute;top:0;left:0;right:0;bottom:0;will-change:transform;';
-  // Move all tiles into inner wrapper
-  tiles.forEach(t => inner.appendChild(t));
-  roller.insertBefore(inner, sel.nextSibling);
-
-  function setTranslate(idx, animate) {
-    const y = (CENTER - idx) * ITEM_H;
-    inner.style.transition = animate ? 'transform .2s cubic-bezier(.17,.67,.35,1)' : 'none';
-    inner.style.transform = `translateY(${y}px)`;
-  }
-
-  let committedIdx = initIdx;
-
-  function snapTo(rawIdx, animate) {
-    const idx = Math.max(0, Math.min(count - 1, Math.round(rawIdx)));
-    const changed = idx !== committedIdx;
-    committedIdx = idx;
-    currentIdx = idx;
-    setTranslate(idx, animate);
-    renderTiles(idx);
-    if (animate && changed) Haptic.tick();
-    drumSetValue(inputId, drumValAt(inputId, idx), animate);
-  }
-
-  // Initial render
-  renderTiles(initIdx);
-  setTranslate(initIdx, false);
-
-  // ── Input handling ─────────────────────────────────────────────────────────
-  let dragging = false, startY = 0, startIdx = 0, lastY = 0, vel = 0;
-
-  function onStart(y) {
-    dragging = true; startY = y; lastY = y;
-    startIdx = committedIdx; vel = 0;
-    inner.style.transition = 'none';
-  }
-
-  function onMove(y) {
-    if (!dragging) return;
-    vel = (lastY - y) / ITEM_H;
-    lastY = y;
-    const floatIdx = startIdx + (startY - y) / ITEM_H;
-    const clamped = Math.max(0, Math.min(count - 1, floatIdx));
-    setTranslate(clamped, false);
-    const nearIdx = Math.round(clamped);
-    if (nearIdx !== currentIdx) {
-      currentIdx = nearIdx;
-      renderTiles(nearIdx);
-    }
-  }
-
-  function onEnd(y) {
-    if (!dragging) return;
-    dragging = false;
-    const floatIdx = startIdx + (startY - y) / ITEM_H;
-    const momentum = Math.max(-5, Math.min(5, vel * 7));
-    snapTo(floatIdx + momentum, true);
-  }
-
-  const ac = new AbortController();
-  const sig = { signal: ac.signal };
-
-  roller.addEventListener('touchstart', e => { onStart(e.touches[0].clientY); e.preventDefault(); }, { passive:false, ...sig });
-  roller.addEventListener('touchmove',  e => { onMove(e.touches[0].clientY);  e.preventDefault(); }, { passive:false, ...sig });
-  roller.addEventListener('touchend',   e => { onEnd(e.changedTouches[0].clientY); },                { passive:true,  ...sig });
-
-  roller.addEventListener('mousedown', e => {
-    onStart(e.clientY); e.preventDefault();
-    const move = ev => onMove(ev.clientY);
-    const up   = ev => { onEnd(ev.clientY); window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up); };
-    window.addEventListener('mousemove', move);
-    window.addEventListener('mouseup', up);
-  }, sig);
-
-  roller.addEventListener('wheel', e => {
-    e.preventDefault();
-    snapTo(committedIdx + Math.sign(e.deltaY), true);
-  }, { passive:false, ...sig });
-
-  // Expose destroy so rebuild can clean up listeners
-  roller._drumDestroy = () => { ac.abort(); roller._drumDestroy = null; };
-}
-
-function buildAllDrums() {
-  DRUM_FIELDS.forEach(([rid, iid]) => buildDrum(rid, iid));
-}
-
-function rebuildDrumsForUnit() {
-  const unit = getUnit();
-  DRUM_FIELDS.forEach(([, iid]) => {
-    const span = document.getElementById(iid + '-unit');
-    if (span) span.textContent = unit;
-  });
-  const barLbl = document.getElementById('bar-unit-label');
-  if (barLbl) barLbl.textContent = unit;
-  const customLbl = document.getElementById('custom-unit-label');
-  if (customLbl) customLbl.textContent = unit;
-  buildAllDrums();
-}
-
-// ── UTILS ─────────────────────────────────────────────────────────────────────
-function showToast(msg) {
-  const t = document.getElementById('toast');
-  t.textContent = msg;
-  t.classList.add('show');
-  setTimeout(() => t.classList.remove('show'), 2500);
-}
-function bindAutosave() {
-  ['s-bw','s-days','s-goal','s-age','s-units','t-adapt','t-deload','t-cycling','t-mealplan'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', autosaveProfile);
-  });
-  ['sw-squat','sw-bench','sw-dead','sw-ohp','sw-row'].forEach(id => {
-    const el = document.getElementById(id);
-    if (el) el.addEventListener('change', autosaveWeights);
-  });
-}
-
-// ── INIT ──────────────────────────────────────────────────────────────────────
-(async () => {
-  await loadFromCloud();
-  seedProgressFromWeights();
-  updateUnitLabels();
-  populateSettings();
-  renderToday();
-  renderProgress();
-  resetRestTimer();
-  syncWarmupBox();
-  bindAutosave();
-  buildPlateInputs();
-  calcAllPlates();
-  buildAllDrums();
-  _appReady = true;
-})();
+(async()=>{ await load(); renderAll(); })();
 </script>
 </body>
 </html>
