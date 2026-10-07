@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="theme-color" content="#fffdfa">
 <title>RackCity</title>
 <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23c92f2f'/%3E%3Cg fill='%23fff'%3E%3Crect x='13' y='29' width='38' height='6' rx='3'/%3E%3Crect x='8' y='20' width='7' height='24' rx='2'/%3E%3Crect x='49' y='20' width='7' height='24' rx='2'/%3E%3Crect x='3' y='24' width='5' height='16' rx='2'/%3E%3Crect x='56' y='24' width='5' height='16' rx='2'/%3E%3C/g%3E%3C/svg%3E">
@@ -18,11 +18,11 @@
   --border:#eadfd7;
   --text:#171311;
   --muted:#74675f;
-  --hint:#a3958b;
+  --hint:#74675f;
   --red:#c92f2f;
   --red-dark:#aa2020;
-  --green:#2f8f47;
-  --amber:#ad731b;
+  --green:#237336;
+  --amber:#855610;
   --display:'Barlow Condensed',sans-serif;
   --body:'DM Sans',sans-serif;
 }
@@ -39,7 +39,7 @@ button{touch-action:manipulation}
 .sync-dot.err{background:var(--red)}
 @keyframes pulse{50%{opacity:.35}}
 .hero{padding:8px 2px 20px}
-.eyebrow{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--red);margin-bottom:6px}
 h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01em;margin-bottom:10px}
 .hero p{max-width:48ch;color:var(--muted);font-size:14px;line-height:1.6}
 .card{background:rgba(255,255,255,.94);border:1px solid rgba(23,19,17,.07);border-radius:24px;padding:18px;margin-bottom:14px;box-shadow:0 14px 36px rgba(43,28,18,.055)}
@@ -51,11 +51,11 @@ h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01e
 .segmented button.active{background:#fff;color:var(--red);box-shadow:0 4px 12px rgba(43,28,18,.08)}
 .control-row{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:16px}
 .field{min-width:0}
-.field label{display:block;font-size:11px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
+.field label{display:block;font-size:12px;color:var(--muted);font-weight:700;letter-spacing:.05em;text-transform:uppercase;margin-bottom:7px}
 .stepper{display:grid;grid-template-columns:44px minmax(0,1fr) 44px;align-items:center;background:var(--soft);border:1px solid rgba(23,19,17,.06);border-radius:16px;overflow:hidden}
 .stepper button{height:48px;border:0;background:transparent;color:var(--red);font-size:22px;font-weight:700;cursor:pointer}
 .stepper button:active{background:var(--soft-red)}
-.stepper input{width:100%;height:48px;border:0;outline:0;background:transparent;color:var(--text);text-align:center;font-family:var(--display);font-size:24px;font-weight:700;-moz-appearance:textfield}
+.stepper input{width:100%;height:48px;border:0;background:transparent;color:var(--text);text-align:center;font-family:var(--display);font-size:24px;font-weight:700;-moz-appearance:textfield}
 .stepper input::-webkit-outer-spin-button,.stepper input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .unit-suffix{font-family:var(--body);font-size:12px;color:var(--muted);font-weight:600;margin-left:3px}
 .plates-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
@@ -63,30 +63,30 @@ h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01e
 .plate-name{display:flex;align-items:center;gap:9px;min-width:0}
 .plate-swatch{width:10px;height:32px;border-radius:4px;flex:0 0 auto}
 .plate-weight{font-family:var(--display);font-size:20px;font-weight:700;line-height:1}
-.plate-meta{font-size:10px;color:var(--muted);margin-top:3px}
+.plate-meta{font-size:12px;color:var(--muted);margin-top:3px}
 .pair-counter{display:flex;align-items:center;gap:6px;flex:0 0 auto}
-.pair-counter button{width:34px;height:34px;border:1px solid rgba(23,19,17,.08);border-radius:11px;background:#fff;color:var(--text);font-size:18px;font-weight:700;cursor:pointer}
+.pair-counter button{width:44px;height:44px;border:1px solid rgba(23,19,17,.08);border-radius:11px;background:#fff;color:var(--text);font-size:18px;font-weight:700;cursor:pointer}
 .pair-counter button:active{background:var(--soft-red);color:var(--red)}
 .pair-count{min-width:22px;text-align:center;font-family:var(--display);font-size:20px;font-weight:700}
-.inventory-note{font-size:11px;color:var(--muted);margin-top:12px}
+.inventory-note{font-size:12px;color:var(--muted);margin-top:12px}
 .reset-link{border:0;background:transparent;color:var(--red);font-size:12px;font-weight:700;cursor:pointer;padding:4px 0}
 .target-card{border-color:rgba(201,47,47,.10);background:linear-gradient(180deg,#fff 0%,#fffafa 100%)}
 .target-wrap{display:grid;grid-template-columns:52px minmax(0,1fr) 52px;align-items:center;gap:8px;margin-top:4px}
 .target-wrap button{height:52px;border:1px solid rgba(201,47,47,.14);border-radius:16px;background:var(--soft-red);color:var(--red);font-size:25px;font-weight:700;cursor:pointer}
 .target-input-wrap{display:flex;align-items:baseline;justify-content:center;border-bottom:2px solid rgba(201,47,47,.18);padding:4px 8px 7px}
-.target-input-wrap input{width:100%;max-width:180px;border:0;outline:0;background:transparent;text-align:center;color:var(--text);font-family:var(--display);font-size:54px;font-weight:700;line-height:1;-moz-appearance:textfield}
+.target-input-wrap input{width:100%;max-width:180px;border:0;background:transparent;text-align:center;color:var(--text);font-family:var(--display);font-size:54px;font-weight:700;line-height:1;-moz-appearance:textfield}
 .target-input-wrap input::-webkit-outer-spin-button,.target-input-wrap input::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
 .target-unit{font-family:var(--display);font-size:20px;color:var(--red);font-weight:700}
 .quick-targets{display:flex;gap:7px;flex-wrap:wrap;margin-top:12px;justify-content:center}
-.quick-targets button{border:1px solid rgba(23,19,17,.08);background:#fff;color:var(--muted);padding:7px 10px;border-radius:999px;font-size:11px;font-weight:700;cursor:pointer}
+.quick-targets button{border:1px solid rgba(23,19,17,.08);background:#fff;color:var(--muted);padding:7px 10px;border-radius:999px;font-size:12px;font-weight:700;cursor:pointer}
 .quick-targets button:active{background:var(--soft-red);color:var(--red)}
 .result-empty{padding:30px 8px;text-align:center;color:var(--muted);font-size:13px}
 .result-summary{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;margin-bottom:6px}
-.result-kicker{font-size:11px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
+.result-kicker{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.08em;font-weight:700}
 .result-big{font-family:var(--display);font-size:38px;font-weight:700;line-height:1;color:var(--red);margin-top:4px}
-.result-delta{font-size:11px;color:var(--amber);margin-top:5px}
-.exact-badge{display:inline-flex;align-items:center;gap:5px;background:#eef8f0;color:var(--green);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:700}
-.near-badge{display:inline-flex;align-items:center;gap:5px;background:#fff6e8;color:var(--amber);border-radius:999px;padding:7px 9px;font-size:11px;font-weight:700}
+.result-delta{font-size:12px;color:var(--amber);margin-top:5px}
+.exact-badge{display:inline-flex;align-items:center;gap:5px;background:#eef8f0;color:var(--green);border-radius:999px;padding:7px 9px;font-size:12px;font-weight:700}
+.near-badge{display:inline-flex;align-items:center;gap:5px;background:#fff6e8;color:var(--amber);border-radius:999px;padding:7px 9px;font-size:12px;font-weight:700}
 .bar-diagram{overflow-x:auto;padding:18px 0 12px}
 .bar-visual{min-width:300px;display:flex;align-items:center;justify-content:center;gap:0;min-height:76px}
 .sleeve{width:25px;height:11px;background:#c8c0ba;border-radius:4px;flex:0 0 auto}
@@ -96,11 +96,11 @@ h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01e
 .plate-block{border-radius:4px;display:flex;align-items:center;justify-content:center;color:#fff;font-family:var(--display);font-size:9px;font-weight:700;flex:0 0 auto;writing-mode:vertical-rl;text-orientation:mixed}
 .load-list{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}
 .load-cell{background:var(--soft);border-radius:14px;padding:11px 12px}
-.load-label{font-size:10px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
+.load-label{font-size:12px;color:var(--muted);text-transform:uppercase;letter-spacing:.07em;font-weight:700}
 .load-value{font-family:var(--display);font-size:20px;font-weight:700;margin-top:2px;overflow-wrap:anywhere}
 .load-cell.full{grid-column:1/-1}
 .error-box{background:#fff5eb;border:1px solid rgba(173,115,27,.16);border-radius:16px;padding:13px;color:var(--amber);font-size:13px;line-height:1.55}
-.footer-note{text-align:center;color:var(--hint);font-size:11px;padding:10px 0 0}
+.footer-note{text-align:center;color:var(--hint);font-size:12px;padding:10px 0 0}
 .toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:20;background:rgba(23,19,17,.94);color:#fff;border-radius:999px;padding:9px 15px;font-size:12px;opacity:0;pointer-events:none;transition:opacity .18s;white-space:nowrap;max-width:calc(100vw - 32px);overflow:hidden;text-overflow:ellipsis}
 .toast.show{opacity:1}
 @media(max-width:520px){
@@ -118,84 +118,95 @@ h1{font-family:var(--display);font-size:42px;line-height:.95;letter-spacing:.01e
   .load-list{grid-template-columns:1fr}
   .load-cell.full{grid-column:auto}
 }
+button:focus-visible,input:focus-visible,summary:focus-visible{outline:3px solid var(--red);outline-offset:3px}
+input:focus-visible{outline-offset:-3px}
+button:disabled{opacity:.5;cursor:not-allowed}
+.sync{white-space:normal;flex-wrap:wrap;justify-content:flex-end;max-width:230px}
+.sync-dot{flex:0 0 8px}
+.card-sub,.inventory-note{font-size:13px}
+.quick-targets button,.segmented button,.reset-link{min-height:44px}
+.control-row{grid-template-columns:1fr;margin:14px 0 8px}
+.inventory-heading{display:flex;align-items:center;justify-content:space-between;font-size:13px;color:var(--muted);margin-bottom:8px}
+.equipment summary{cursor:pointer;list-style-position:inside}
+.equipment summary h2{display:inline;margin-left:5px}
+.equipment summary .card-sub{display:block;margin-left:20px}
+.equipment-body{padding-top:12px}
+.equipment .segmented{margin-top:12px}
+.plate-row{padding:8px}
+.bar-visual{min-width:240px}
+.alternatives{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+.alternatives button{border:1px solid var(--border);border-radius:12px;background:var(--soft);padding:10px 12px;min-height:44px;color:var(--text);font-weight:600}
+.load-cell.full .load-value{font-size:26px}
+@media(prefers-reduced-motion:reduce){.sync-dot.syncing{animation:none}.toast{transition:none}}
 </style>
 </head>
 <body>
 <main class="app">
   <header class="topbar">
     <div class="brand">Rack<span>City</span></div>
-    <div class="sync"><span id="sync-label"></span><span class="sync-dot" id="sync-dot"></span></div>
+    <div class="sync"><span id="sync-label" role="status"></span><span class="sync-dot" id="sync-dot" aria-hidden="true"></span><button type="button" class="reset-link" id="sync-retry" onclick="retrySync()" hidden>Retry</button></div>
   </header>
 
   <section class="hero">
     <h1>Plate Calculator</h1>
-    <p>Enter your bar weight, available plate pairs, and target weight.</p>
-  </section>
-
-  <section class="card">
-    <div class="card-head">
-      <div>
-        <div class="card-title">Equipment</div>
-        <div class="card-sub">LBS is the default.</div>
-      </div>
-      <div class="segmented" aria-label="Units">
-        <button type="button" id="unit-lbs" onclick="setUnit('lbs')">LBS</button>
-        <button type="button" id="unit-kg" onclick="setUnit('kg')">KG</button>
-      </div>
-    </div>
-
-    <div class="control-row">
-      <div class="field">
-        <label for="bar-weight">Bar weight</label>
-        <div class="stepper">
-          <button type="button" aria-label="Decrease bar weight" onclick="changeBar(-1)">−</button>
-          <input id="bar-weight" type="number" inputmode="decimal" aria-label="Bar weight">
-          <button type="button" aria-label="Increase bar weight" onclick="changeBar(1)">+</button>
-        </div>
-      </div>
-      <div class="field">
-        <label>Inventory</label>
-        <div style="height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 4px;color:var(--muted);font-size:12px;">
-          <span>Matching pairs</span>
-          <button type="button" class="reset-link" onclick="resetInventory()">Clear all</button>
-        </div>
-      </div>
-    </div>
-
-    <div class="plates-grid" id="plate-inputs"></div>
-    <div class="inventory-note">Each count is a matching pair: one plate for the left side and one for the right.</div>
+    <p>Choose a total weight. See exactly what to put on each side.</p>
   </section>
 
   <section class="card target-card">
     <div class="card-head" style="margin-bottom:8px">
       <div>
-        <div class="card-title">Target weight</div>
-        <div class="card-sub">Adjust in the smallest standard load increment.</div>
+        <h2 class="card-title">Target weight</h2>
+        <div class="card-sub">Total weight, including the bar.</div>
       </div>
     </div>
     <div class="target-wrap">
       <button type="button" aria-label="Decrease target weight" onclick="changeTarget(-1)">−</button>
       <div class="target-input-wrap">
-        <input id="target-weight" type="number" inputmode="decimal" aria-label="Target weight">
+        <input id="target-weight" aria-describedby="input-message" max="10000" type="number" inputmode="decimal" aria-label="Target weight">
         <span class="target-unit" id="target-unit">lbs</span>
       </div>
       <button type="button" aria-label="Increase target weight" onclick="changeTarget(1)">+</button>
     </div>
     <div class="quick-targets" id="quick-targets"></div>
+    <p class="card-sub" id="input-message" role="status"></p>
   </section>
 
   <section class="card" aria-live="polite">
     <div class="card-head">
       <div>
-        <div class="card-title">Load this bar</div>
+        <h2 class="card-title">Load this bar</h2>
         <div class="card-sub">Plates shown are per side unless noted otherwise.</div>
       </div>
     </div>
     <div id="result"><div class="result-empty">Add at least one plate pair to calculate a load.</div></div>
   </section>
 
+  <details class="card equipment" id="equipment">
+    <summary><h2 class="card-title">Equipment</h2><span id="equipment-summary" class="card-sub"></span></summary>
+    <div class="equipment-body">
+    <p class="card-sub" id="unit-help">Choose the units printed on your plates. LBS and KG remember separate equipment and targets; switching does not convert weights. A 20 kg plate is not a 45 lb plate (about 20.41 kg).</p>
+    <div class="segmented" role="group" aria-label="Equipment units" aria-describedby="unit-help">
+      <button type="button" id="unit-lbs" onclick="setUnit('lbs')">LBS</button>
+      <button type="button" id="unit-kg" onclick="setUnit('kg')">KG</button>
+    </div>
+    <div class="control-row">
+      <div class="field">
+        <label for="bar-weight">Bar weight <span id="bar-unit">(lbs)</span></label>
+        <div class="stepper">
+          <button type="button" aria-label="Decrease bar weight" onclick="changeBar(-1)">−</button>
+          <input id="bar-weight" type="number" min="0.01" max="10000" step="any" inputmode="decimal" aria-label="Bar weight">
+          <button type="button" aria-label="Increase bar weight" onclick="changeBar(1)">+</button>
+        </div>
+      </div>
+    </div>
+    <div class="inventory-heading"><span>Matching plate pairs</span><button type="button" class="reset-link" onclick="resetInventory()">Clear all</button></div>
+    <div class="plates-grid" id="plate-inputs"></div>
+    <div class="inventory-note">Each count is a matching pair: one plate for the left side and one for the right.</div>
+    </div>
+  </details>
+
 </main>
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status"></div>
 
 <script>
 const API = 'https://stronglifts-api.stronglifts-api.workers.dev';
@@ -218,19 +229,29 @@ const DEFAULTS = {
 let rawState = {};
 let state = JSON.parse(JSON.stringify(DEFAULTS));
 let saveTimer = null;
+let pending = false;
+let revision = 0;
+let saving = false;
+let loading = false;
+let localSaved = false;
+let retryTimer = null;
+let retryDelay = 2000;
 
+function readStorage(key){ try { return localStorage.getItem(key); } catch { return null; } }
+function writeStorage(key,value){ try { localStorage.setItem(key,value); return true; } catch { return false; } }
 function resolveUserKey(){
-  const params = new URLSearchParams(location.search);
-  const queryKey = params.get('uid');
-  if(queryKey){ localStorage.setItem('sl_user_key',queryKey); return queryKey; }
-  const cached = localStorage.getItem('sl_user_key');
+  const queryKey = new URLSearchParams(location.search).get('uid');
+  if(queryKey){ writeStorage('sl_user_key',queryKey); return queryKey; }
+  const cached=readStorage('sl_user_key');
   if(cached) return cached;
-  const generated = `user_${Math.random().toString(36).slice(2,10)}`;
-  localStorage.setItem('sl_user_key',generated);
+  const generated='user_'+crypto.randomUUID();
+  writeStorage('sl_user_key',generated);
   return generated;
 }
-const USER_KEY = resolveUserKey();
-
+const PREVIOUS_USER_KEY=readStorage('sl_user_key');
+const USER_KEY=resolveUserKey();
+const CACHE_KEY='sl_calc_cache:'+USER_KEY;
+const DATA_URL=API+'/data/'+encodeURIComponent(USER_KEY);
 function clone(v){ return JSON.parse(JSON.stringify(v)); }
 function unit(){ return state.units === 'kg' ? 'kg' : 'lbs'; }
 function sizes(){ return PLATES[unit()]; }
@@ -239,97 +260,119 @@ function step(){ const s=sizes(); return s[s.length-1]*2; }
 function barStep(){ return unit()==='lbs' ? 5 : 2.5; }
 function formatNumber(v){ return Number.isInteger(v) ? String(v) : String(Math.round(v*100)/100); }
 function vibrate(ms=6){ try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){} }
-
+function record(v){ return v && typeof v==='object' && !Array.isArray(v) ? v : {}; }
+function positive(v,fallback){ const n=Number(v); return Number.isFinite(n)&&n>0&&n<=10000 ? Math.round(n*100)/100||fallback : fallback; }
+function count(v){ const n=Number(v); return Number.isFinite(n) ? Math.min(100,Math.max(0,Math.floor(n))) : 0; }
 function normalizeLoaded(data={}){
-  rawState = data && typeof data === 'object' ? data : {};
-  const savedCalculatorUnit = data.calculator?.units;
-  state.units = savedCalculatorUnit === 'kg' || savedCalculatorUnit === 'lbs' ? savedCalculatorUnit : 'lbs';
-
-  const calculatorVersion = Number(data.calculator?.version) || 0;
-  if(data.calculator?.inventory?.lbs && data.calculator?.inventory?.kg){
-    const loadedInventory = {
-      lbs:[...data.calculator.inventory.lbs].slice(0,6),
-      kg:[...data.calculator.inventory.kg].slice(0,6),
-    };
-    const hasSavedPairs = [...loadedInventory.lbs, ...loadedInventory.kg].some(n => Number(n) > 0);
-    state.inventory = calculatorVersion < 2 && !hasSavedPairs ? clone(DEFAULTS.inventory) : loadedInventory;
-  } else {
-    state.inventory = clone(DEFAULTS.inventory);
-    if(Array.isArray(data.plates)){
-      const legacyPairs = data.plates.slice(0,6).map(n=>Math.max(0,Math.floor((Number(n)||0)/2)));
-      while(legacyPairs.length<6) legacyPairs.push(0);
-      if(legacyPairs.some(n=>n>0)) state.inventory[state.units] = legacyPairs;
-    }
+  rawState=record(data);
+  const c=record(rawState.calculator);
+  state=clone(DEFAULTS);
+  state.units=c.units==='kg'?'kg':'lbs';
+  for(const u of ['lbs','kg']){
+    if(Array.isArray(c.inventory?.[u])) state.inventory[u]=Array.from({length:6},(_,i)=>count(c.inventory[u][i]));
+    else if(u===state.units && Array.isArray(rawState.plates)) state.inventory[u]=Array.from({length:6},(_,i)=>count(Number(rawState.plates[i])/2));
+    state.barWeight[u]=positive(c.barWeight?.[u] ?? rawState.barWeight?.[u] ?? (u==='lbs'?rawState.barWeightLbs:undefined),DEFAULTS.barWeight[u]);
+    state.target[u]=Math.max(state.barWeight[u],positive(c.target?.[u],DEFAULTS.target[u]));
   }
-  ['lbs','kg'].forEach(u=>{ while(state.inventory[u].length<6) state.inventory[u].push(0); state.inventory[u]=state.inventory[u].map(n=>Math.max(0,Math.floor(Number(n)||0))); });
-
-  state.barWeight = {
-    lbs: Number(data.calculator?.barWeight?.lbs ?? data.barWeight?.lbs ?? data.barWeightLbs) || 45,
-    kg: Number(data.calculator?.barWeight?.kg ?? data.barWeight?.kg) || 20,
-  };
-  state.target = {
-    lbs: Number(data.calculator?.target?.lbs) || 135,
-    kg: Number(data.calculator?.target?.kg) || 60,
-  };
 }
-
 function syncState(mode){
-  const dot=document.getElementById('sync-dot');
-  const label=document.getElementById('sync-label');
-  dot.className='sync-dot'+(mode==='syncing'?' syncing':mode==='err'?' err':'');
-  label.textContent=mode==='syncing'?'saving...':'';
+  const labels={loading:'Checking sync…',syncing:'Saving…',ok:'Saved',local:'Saved on this device · sync failed',err:'Not saved · sync failed',ready:'Ready'};
+  document.getElementById('sync-label').textContent=labels[mode];
+  document.getElementById('sync-dot').className='sync-dot'+(['loading','syncing'].includes(mode)?' syncing':['local','err'].includes(mode)?' err':'');
+  document.getElementById('sync-retry').hidden=!['local','err'].includes(mode);
 }
-
 function buildPayload(){
-  const activeInventory = state.inventory[unit()].map(n=>n*2);
   return {
     ...rawState,
-    settings:{...(rawState.settings||{}),units:unit()},
-    plates:activeInventory,
-    barWeight:{...(rawState.barWeight||{}),...state.barWeight},
+    settings:{...record(rawState.settings),units:unit()},
+    plates:pairs().map(n=>n*2),
+    barWeight:{...record(rawState.barWeight),...state.barWeight},
     barWeightLbs:state.barWeight.lbs,
-    calculator:{
-      version:2,
-      units:unit(),
-      inventory:clone(state.inventory),
-      barWeight:{...state.barWeight},
-      target:{...state.target},
-    },
+    calculator:{version:2,units:unit(),inventory:clone(state.inventory),barWeight:{...state.barWeight},target:{...state.target}},
     updatedAt:Date.now(),
   };
 }
-
+function cacheState(){
+  localSaved=writeStorage(CACHE_KEY,JSON.stringify({data:rawState,pending}));
+}
+function restoreCache(){
+  try{
+    const cached=JSON.parse(readStorage(CACHE_KEY));
+    if(cached && record(cached.data)===cached.data){ normalizeLoaded(cached.data);pending=cached.pending===true;localSaved=true;return true; }
+  }catch{}
+  // The old cache had no owner field. Only migrate for its existing browser identity.
+  if(PREVIOUS_USER_KEY===USER_KEY){
+    try{
+      const legacy=JSON.parse(readStorage('sl_calc_cache'));
+      if(legacy && record(legacy)===legacy){normalizeLoaded(legacy);cacheState();return true;}
+    }catch{}
+  }
+  normalizeLoaded({});return false;
+}
+async function request(options={}){
+  const controller=new AbortController();
+  const timer=setTimeout(()=>controller.abort(),8000);
+  try{
+    const response=await fetch(DATA_URL,{...options,signal:controller.signal});
+    if(response.status===404 && !options.method) return null;
+    if(!response.ok) throw new Error('Sync failed');
+    // Keep the timeout active while reading the response body too.
+    if(options.method) return null;
+    const body=await response.json();
+    if(!body || record(body.data)!==body.data) throw new Error('Invalid saved data');
+    return body.data;
+  }finally{ clearTimeout(timer); }
+}
+function scheduleRetry(){
+  clearTimeout(retryTimer);
+  retryTimer=setTimeout(retrySync,retryDelay);
+  retryDelay=Math.min(retryDelay*2,60000);
+}
+function queueSave(){
+  revision++;pending=true;rawState=buildPayload();cacheState();
+  syncState('syncing');
+  clearTimeout(saveTimer);saveTimer=setTimeout(saveNow,250);
+}
 async function saveNow(){
   clearTimeout(saveTimer);
-  const payload=buildPayload();
-  rawState=payload;
-  localStorage.setItem('sl_calc_cache',JSON.stringify(payload));
+  if(saving||loading||!pending) return;
+  saving=true;
+  const sentRevision=revision;
+  const payload=clone(rawState);
   syncState('syncing');
+  let succeeded=false;
   try{
-    const r=await fetch(`${API}/data/${USER_KEY}`,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
-    if(!r.ok) throw new Error(String(r.status));
-    syncState('ok');
-  }catch(e){ syncState('err'); }
+    await request({method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)});
+    succeeded=true;retryDelay=2000;clearTimeout(retryTimer);
+    if(sentRevision===revision){pending=false;cacheState();syncState('ok');}
+  }catch{ syncState(localSaved?'local':'err');scheduleRetry(); }
+  finally{saving=false;}
+  if(succeeded && pending) await saveNow();
 }
-function queueSave(){ clearTimeout(saveTimer); saveTimer=setTimeout(saveNow,250); }
-
 async function load(){
-  syncState('syncing');
+  if(loading||saving) return;
+  loading=true;syncState('loading');
   try{
-    const r=await fetch(`${API}/data/${USER_KEY}`);
-    if(r.ok){ const body=await r.json(); normalizeLoaded(body.data||{}); localStorage.setItem('sl_calc_cache',JSON.stringify(body.data||{})); syncState('ok'); return; }
-    if(r.status===404){ normalizeLoaded({}); syncState('ok'); return; }
-    throw new Error(String(r.status));
-  }catch(e){
-    const cached=localStorage.getItem('sl_calc_cache');
-    normalizeLoaded(cached?JSON.parse(cached):{});
-    syncState(cached?'err':'err');
-  }
+    const remote=await request();
+    if(localSaved && Number(rawState.updatedAt)>Number(remote?.updatedAt||0)) pending=true;
+    if(pending){
+      // Preserve this device's edits, but retain unrelated fields from the server.
+      if(remote) rawState=remote;
+      rawState=buildPayload();cacheState();
+    }else if(remote){normalizeLoaded(remote);cacheState();renderAll();}
+    else {syncState('ready');}
+    retryDelay=2000;clearTimeout(retryTimer);
+    if(!pending && remote) syncState('ok');
+  }catch{syncState(localSaved?'local':'err');scheduleRetry();}
+  finally{loading=false;}
+  if(pending) await saveNow();
 }
+function retrySync(){clearTimeout(retryTimer);return pending?saveNow():load();}
 
 function setUnit(next){
   if(next!=='lbs' && next!=='kg') return;
   state.units=next;
+  document.getElementById('input-message').textContent='';
   vibrate();
   renderAll();
   queueSave();
@@ -337,6 +380,7 @@ function setUnit(next){
 
 function buildInventory(){
   const el=document.getElementById('plate-inputs');
+  const focusId=el.contains(document.activeElement)?document.activeElement.id:null;
   const u=unit();
   el.innerHTML=sizes().map((weight,i)=>`<div class="plate-row">
     <div class="plate-name">
@@ -344,72 +388,95 @@ function buildInventory(){
       <div><div class="plate-weight">${weight} ${u}</div><div class="plate-meta">pair${pairs()[i]===1?'':'s'} available</div></div>
     </div>
     <div class="pair-counter">
-      <button type="button" aria-label="Remove one pair of ${weight} ${u}" onclick="changePair(${i},-1)">−</button>
+      <button type="button" id="pair-remove-${i}" aria-label="Remove one pair of ${weight} ${u}" onclick="changePair(${i},-1)">−</button>
       <div class="pair-count">${pairs()[i]}</div>
-      <button type="button" aria-label="Add one pair of ${weight} ${u}" onclick="changePair(${i},1)">+</button>
+      <button type="button" id="pair-add-${i}" aria-label="Add one pair of ${weight} ${u}" onclick="changePair(${i},1)">+</button>
     </div>
   </div>`).join('');
+  if(focusId) document.getElementById(focusId)?.focus();
+  renderEquipmentSummary();
 }
 
 function changePair(index,delta){
   const inv=pairs();
-  inv[index]=Math.max(0,(inv[index]||0)+delta);
+  inv[index]=count((inv[index]||0)+delta);
   vibrate();
   buildInventory();
+  renderTarget();
   renderResult();
   queueSave();
 }
 function resetInventory(){
   if(!confirm(`Clear all ${unit().toUpperCase()} plate pairs?`)) return;
   state.inventory[unit()]=[0,0,0,0,0,0];
-  buildInventory();renderResult();queueSave();
+  buildInventory();renderTarget();renderResult();queueSave();
 }
 
 function changeBar(dir){
   const u=unit();
-  state.barWeight[u]=Math.max(barStep(),Math.round((state.barWeight[u]+dir*barStep())*100)/100);
-  renderBar();renderResult();queueSave();
+  state.barWeight[u]=Math.min(10000,Math.max(0.01,Math.round((state.barWeight[u]+dir*barStep())*100)/100));
+  adjustTargetForBar();renderBar();renderTarget();renderEquipmentSummary();renderResult();queueSave();
 }
 function commitBar(){
   const el=document.getElementById('bar-weight');
+  if(el.value===formatNumber(state.barWeight[unit()])) return;
   const v=Number(el.value);
-  if(Number.isFinite(v)&&v>0) state.barWeight[unit()]=v;
-  renderBar();renderResult();queueSave();
+  if(Number.isFinite(v)&&v>=0.01&&v<=10000) {state.barWeight[unit()]=positive(v,state.barWeight[unit()]);document.getElementById('input-message').textContent='';}
+  else document.getElementById('input-message').textContent='Enter a bar weight from 0.01 to 10,000.';
+  adjustTargetForBar();renderBar();renderTarget();renderEquipmentSummary();renderResult();queueSave();
+}
+function adjustTargetForBar(){
+  if(state.target[unit()]<state.barWeight[unit()]){
+    state.target[unit()]=state.barWeight[unit()];
+    document.getElementById('input-message').textContent='Target adjusted to match the bar weight.';
+  }
+}
+function renderEquipmentSummary(){
+  const n=pairs().reduce((a,b)=>a+b,0);
+  document.getElementById('equipment-summary').textContent=formatNumber(state.barWeight[unit()])+' '+unit()+' bar · '+n+' plate pair'+(n===1?'':'s')+' · Edit';
 }
 function renderBar(){
   const el=document.getElementById('bar-weight');
+  document.getElementById('bar-unit').textContent='('+unit()+')';
+  el.setAttribute('aria-label','Bar weight in '+(unit()==='kg'?'kilograms':'pounds'));
   el.value=formatNumber(state.barWeight[unit()]);
-  el.step=String(barStep());
+  el.step='any';
 }
 
-function changeTarget(dir){
-  const u=unit();
-  const min=state.barWeight[u];
-  state.target[u]=Math.max(min,Math.round((state.target[u]+dir*step())*100)/100);
-  vibrate();renderTarget();renderResult();queueSave();
-}
-function setTarget(v){
-  const u=unit();
-  state.target[u]=Math.max(state.barWeight[u],Number(v)||state.target[u]);
+function changeTarget(dir){vibrate();setTarget(state.target[unit()]+dir*step());}
+function setTarget(value){
+  const v=Number(value),u=unit();
+  const choosingAlternative=document.getElementById('result').contains(document.activeElement);
+  let message='';
+  if(String(value).trim()===''||!Number.isFinite(v)||v<0||v>10000) message='Enter a target weight from 0 to 10,000.';
+  else {
+    state.target[u]=Math.max(state.barWeight[u],Math.round(v*100)/100);
+    if(v<state.barWeight[u]) message='Target adjusted to '+formatNumber(state.barWeight[u])+' '+u+' to include the bar.';
+  }
+  document.getElementById('input-message').textContent=message;
   renderTarget();renderResult();queueSave();
+  if(choosingAlternative) document.getElementById('target-weight').focus();
 }
 function commitTarget(){
   const el=document.getElementById('target-weight');
+  if(el.value===formatNumber(state.target[unit()])) return;
   setTarget(el.value);
 }
 function renderTarget(){
   const u=unit();
   const el=document.getElementById('target-weight');
   el.value=formatNumber(state.target[u]);
-  el.step=String(step());
+  el.step='any';
   el.min=String(state.barWeight[u]);
   document.getElementById('target-unit').textContent=u;
   const presets=u==='lbs'?[95,135,185,225,315,405]:[40,60,80,100,140,180];
-  document.getElementById('quick-targets').innerHTML=presets.map(v=>`<button type="button" onclick="setTarget(${v})">${v}${u}</button>`).join('');
+  const container=document.getElementById('quick-targets');
+  const focused=container.contains(document.activeElement)?document.activeElement.id:null;
+  container.innerHTML=presets.filter(v=>v>=state.barWeight[u] && solve(v).exact).map(v=>`<button type="button" id="preset-${v}" onclick="setTarget(${v})">${v} ${u}</button>`).join('');
+  if(focused) document.getElementById(focused)?.focus();
 }
 
 function scaled(v){ return Math.round(v*100); }
-function unscaled(v){ return v/100; }
 
 function exactCombo(sideWeight){
   const plateInts=sizes().map(scaled);
@@ -436,27 +503,24 @@ function exactCombo(sideWeight){
 }
 
 function solve(target){
-  const u=unit();
-  const bar=state.barWeight[u];
-  if(target<bar-0.0001) return {error:`Target is lighter than your ${formatNumber(bar)} ${u} bar.`};
+  const bar=state.barWeight[unit()];
+  if(!Number.isFinite(target)||target<bar) return {error:'Target must include the bar weight.'};
   const side=(target-bar)/2;
-  let combo=exactCombo(side);
-  if(combo) return {exact:true,total:target,plates:combo,requested:target};
-
-  const maxSide=sizes().reduce((sum,s,i)=>sum+s*(pairs()[i]||0),0);
-  const maxTotal=bar+maxSide*2;
-  if(target>maxTotal+0.0001) return {error:`You only have enough plates to reach ${formatNumber(maxTotal)} ${u}.`};
-
   const inc=sizes()[sizes().length-1];
-  for(let candidateSide=side+inc;candidateSide<=maxSide+0.0001;candidateSide+=inc){
-    candidateSide=Math.round(candidateSide*100)/100;
-    combo=exactCombo(candidateSide);
-    if(combo){
-      const total=Math.round((bar+candidateSide*2)*100)/100;
-      return {exact:false,total,plates:combo,requested:target};
-    }
+  const maxSide=sizes().reduce((sum,s,i)=>sum+s*pairs()[i],0);
+  const make=(weight,plates)=>({total:Math.round((bar+weight*2)*100)/100,plates});
+  // Search on the plate grid, not at offsets from the requested weight.
+  const onGrid=Math.abs(side/inc-Math.round(side/inc))<1e-8;
+  const exact=onGrid?exactCombo(side):null;
+  if(exact) return {exact:true,...make(side,exact),requested:target};
+  let lower=null,upper=null;
+  for(let i=Math.min(Math.floor(side/inc),Math.round(maxSide/inc));i>=0;i--){
+    const combo=exactCombo(i*inc);if(combo){lower=make(i*inc,combo);break;}
   }
-  return {error:'No valid symmetric load can be made from the plate pairs selected.'};
+  for(let i=Math.ceil(side/inc);i<=Math.round(maxSide/inc);i++){
+    const combo=exactCombo(i*inc);if(combo){upper=make(i*inc,combo);break;}
+  }
+  return {exact:false,requested:target,lower,upper};
 }
 
 function plateVisual(combo){
@@ -477,25 +541,26 @@ function plateVisual(combo){
 function renderResult(){
   const el=document.getElementById('result');
   const u=unit();
-  const inv=pairs();
-  if(inv.every(n=>n===0)){
-    el.innerHTML='<div class="result-empty">Add your plate pairs above to calculate the load.</div>';
-    return;
-  }
   const target=state.target[u];
   const calc=solve(target);
   if(calc.error){ el.innerHTML=`<div class="error-box">${calc.error}</div>`; return; }
+  if(!calc.exact){
+    const choices=[['Lower',calc.lower],['Higher',calc.upper]].filter(([,load])=>load);
+    el.innerHTML='<div class="error-box">'+(calc.upper?'This target is not available with your equipment. Choose a load below or above.':'This target exceeds your available equipment. Choose the maximum load below.')+'</div><div class="alternatives">'+choices.map(([label,load])=>{
+      const delta=Math.round((load.total-target)*100)/100;
+      return '<button type="button" onclick="setTarget('+load.total+')">'+label+': '+formatNumber(load.total)+' '+u+' ('+(delta>0?'+':'')+formatNumber(delta)+' '+u+')</button>';
+    }).join('')+'</div>';
+    return;
+  }
   const perSide=calc.plates.length?calc.plates.map(p=>`${p.count}× ${formatNumber(p.size)} ${u}`).join(' + '):'Bar only';
-  const badge=calc.exact?'<span class="exact-badge">✓ Exact load</span>':'<span class="near-badge">Closest load above</span>';
-  const delta=calc.exact?'':`<div class="result-delta">Requested ${formatNumber(calc.requested)} ${u} · +${formatNumber(calc.total-calc.requested)} ${u}</div>`;
   el.innerHTML=`
     <div class="result-summary">
-      <div><div class="result-kicker">Total on bar</div><div class="result-big">${formatNumber(calc.total)} <span style="font-size:.46em">${u}</span></div>${delta}</div>
-      ${badge}
+      <div><div class="result-kicker">Total on bar</div><div class="result-big">${formatNumber(calc.total)} <span style="font-size:.46em">${u}</span></div></div>
+      <span class="exact-badge">✓ Exact load</span>
     </div>
-    ${plateVisual(calc.plates)}
+    <div class="load-cell full"><div class="load-label">Put on each side</div><div class="load-value">${perSide}</div></div>
+    <div aria-hidden="true">${plateVisual(calc.plates)}</div>
     <div class="load-list">
-      <div class="load-cell full"><div class="load-label">Put on each side</div><div class="load-value">${perSide}</div></div>
       <div class="load-cell"><div class="load-label">Bar</div><div class="load-value">${formatNumber(state.barWeight[u])} ${u}</div></div>
       <div class="load-cell"><div class="load-label">Plate weight added</div><div class="load-value">${formatNumber(calc.total-state.barWeight[u])} ${u}</div></div>
     </div>`;
@@ -503,7 +568,9 @@ function renderResult(){
 
 function renderUnits(){
   document.getElementById('unit-lbs').classList.toggle('active',unit()==='lbs');
+  document.getElementById('unit-lbs').setAttribute('aria-pressed',String(unit()==='lbs'));
   document.getElementById('unit-kg').classList.toggle('active',unit()==='kg');
+  document.getElementById('unit-kg').setAttribute('aria-pressed',String(unit()==='kg'));
 }
 function renderAll(){ renderUnits();renderBar();buildInventory();renderTarget();renderResult(); }
 
@@ -517,7 +584,11 @@ document.getElementById('target-weight').addEventListener('change',commitTarget)
 document.getElementById('target-weight').addEventListener('blur',commitTarget);
 document.getElementById('target-weight').addEventListener('keydown',e=>{ if(e.key==='Enter'){ e.currentTarget.blur(); } });
 
-(async()=>{ await load(); renderAll(); })();
+const hasCache=restoreCache();
+document.getElementById('equipment').open=!hasCache;
+renderAll();
+window.addEventListener('online',retrySync);
+load();
 </script>
 </body>
 </html>
