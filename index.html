@@ -140,11 +140,11 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .rest-timer{padding:16px 2px 22px;border-top:1px solid var(--border);margin-top:6px}
 .timer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
 .timer-display{font-family:var(--display);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--red)}
-.timer-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.timer-actions{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;align-items:center}
 .timer-start{flex:1;min-height:48px;border:1px solid var(--border);border-radius:12px;background:var(--soft);color:var(--text);font-weight:700;cursor:pointer}
 .timer-start:hover{background:var(--soft-red);border-color:var(--red)}
 .timer-start[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
-.timer-cancel{min-height:44px;padding:0 8px}
+.timer-cancel{min-height:44px;padding:0 8px;grid-column:1/-1;justify-self:end}
 @media(prefers-reduced-motion:reduce){.sync-dot.syncing{animation:none}.toast{transition:none}}
 </style>
 </head>
@@ -197,10 +197,13 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <div class="timer-actions">
       <button type="button" class="timer-start" id="timer-60" aria-pressed="false" onclick="startRestTimer(60)">1 minute</button>
       <button type="button" class="timer-start" id="timer-180" aria-pressed="false" onclick="startRestTimer(180)">3 minutes</button>
+      <button type="button" class="timer-start" id="timer-300" aria-pressed="false" onclick="startRestTimer(300)">5 minutes</button>
       <button type="button" class="reset-link timer-cancel" id="timer-cancel" onclick="cancelRestTimer()" hidden>Cancel</button>
     </div>
     <p class="card-sub" id="timer-status" role="status">Choose a timer. A short alarm sounds when it ends.</p>
-    <p class="card-sub">Keep this page open and your sound on. Locking your screen may delay the alarm.</p>
+    <button type="button" class="reset-link" onclick="testRestSound()">Test sound</button>
+    <p class="card-sub" id="timer-screen" role="status">The timer will try to keep your screen awake.</p>
+    <p class="card-sub">Keep this page visible and media volume up. Manually locking your phone or switching apps may delay the alarm.</p>
   </section>
 
   <details class="card equipment" id="equipment">
