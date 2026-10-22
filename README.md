@@ -11,9 +11,11 @@ Changes are cached immediately for the current user and synchronized to the conf
 Run regression checks with Node.js:
 
 ```sh
-node --test calculator.test.cjs
+node --test calculator.test.cjs timer.test.cjs
 ```
 
 Tests use isolated storage and a mocked API; they do not write production data. They cover calculation boundaries, inventory constraints, invalid saved data, cache migration, startup edits, serialized saves, failed-save recovery, and request timeouts.
+
+The rest timer offers 1-minute and 3-minute buttons, a countdown, and a short six-beep alarm. Either button restarts the timer; Cancel stops it. Timers run only on the current page and reset on reload. Keep the page open and sound on: device sleep, screen locking, or browser audio suspension may delay the alarm. Timer tests cover duration, delayed updates, restart, cancellation, and unavailable audio.
 
 The API backend is maintained separately. Server-side authorization and cross-device atomic conflict handling cannot be implemented in this static frontend alone. A `uid` identifies saved data; it should not be treated as authentication.

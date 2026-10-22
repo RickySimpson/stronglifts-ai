@@ -137,6 +137,14 @@ button:disabled{opacity:.5;cursor:not-allowed}
 .alternatives{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
 .alternatives button{border:1px solid var(--border);border-radius:12px;background:var(--soft);padding:10px 12px;min-height:44px;color:var(--text);font-weight:600}
 .load-cell.full .load-value{font-size:26px}
+.rest-timer{padding:16px 2px 22px;border-top:1px solid var(--border);margin-top:6px}
+.timer-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px}
+.timer-display{font-family:var(--display);font-size:32px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--red)}
+.timer-actions{display:flex;gap:10px;align-items:center;flex-wrap:wrap}
+.timer-start{flex:1;min-height:48px;border:1px solid var(--border);border-radius:12px;background:var(--soft);color:var(--text);font-weight:700;cursor:pointer}
+.timer-start:hover{background:var(--soft-red);border-color:var(--red)}
+.timer-start[aria-pressed="true"]{background:var(--red);border-color:var(--red);color:#fff}
+.timer-cancel{min-height:44px;padding:0 8px}
 @media(prefers-reduced-motion:reduce){.sync-dot.syncing{animation:none}.toast{transition:none}}
 </style>
 </head>
@@ -181,6 +189,20 @@ button:disabled{opacity:.5;cursor:not-allowed}
     <div id="result"><div class="result-empty">Add at least one plate pair to calculate a load.</div></div>
   </section>
 
+  <section class="rest-timer" aria-labelledby="timer-title">
+    <div class="timer-heading">
+      <h2 class="card-title" id="timer-title">Rest timer</h2>
+      <span class="timer-display" id="timer-display" role="timer" aria-label="Time remaining" aria-live="off">0:00</span>
+    </div>
+    <div class="timer-actions">
+      <button type="button" class="timer-start" id="timer-60" aria-pressed="false" onclick="startRestTimer(60)">1 minute</button>
+      <button type="button" class="timer-start" id="timer-180" aria-pressed="false" onclick="startRestTimer(180)">3 minutes</button>
+      <button type="button" class="reset-link timer-cancel" id="timer-cancel" onclick="cancelRestTimer()" hidden>Cancel</button>
+    </div>
+    <p class="card-sub" id="timer-status" role="status">Choose a timer. A short alarm sounds when it ends.</p>
+    <p class="card-sub">Keep this page open and your sound on. Locking your screen may delay the alarm.</p>
+  </section>
+
   <details class="card equipment" id="equipment">
     <summary><h2 class="card-title">Equipment</h2><span id="equipment-summary" class="card-sub"></span></summary>
     <div class="equipment-body">
@@ -208,6 +230,7 @@ button:disabled{opacity:.5;cursor:not-allowed}
 </main>
 <div class="toast" id="toast" role="status"></div>
 
+<script src="timer.js" defer></script>
 <script>
 const API = 'https://stronglifts-api.stronglifts-api.workers.dev';
 
